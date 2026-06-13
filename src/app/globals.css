@@ -31,6 +31,19 @@
   color-scheme: dark;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
 html,
 body {
   background: var(--color-bg);
@@ -47,9 +60,20 @@ body {
   background-attachment: fixed;
 }
 
+/* Sticky navbar offset for in-page anchors */
+section[id] {
+  scroll-margin-top: 5rem;
+}
+
 ::selection {
   background: rgba(94, 234, 212, 0.25);
   color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .text-gradient {
@@ -105,4 +129,22 @@ body {
 .mask-fade {
   -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
   mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* Skip-to-content link for keyboard users */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  z-index: 100;
+  border-radius: 0.5rem;
+  background: var(--color-brand);
+  color: var(--color-bg);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: top 0.2s ease;
+}
+.skip-link:focus {
+  top: 1rem;
 }

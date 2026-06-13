@@ -13,7 +13,7 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main className="flex flex-col">
+      <main id="main" className="flex flex-col">
         <Hero />
         <LogoCloud />
         <Problem />
