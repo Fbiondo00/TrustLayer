@@ -1,16 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { SCORE_LAYERS } from "@/lib/schema";
 import { Reveal, SectionHeading } from "./Reveal";
 
-const LAYERS = [
-  { name: "Slither", weight: 30, tool: "Trail of Bits", color: "#5eead4", blurb: "~90 static vulnerability detectors." },
-  { name: "Dedaub TokIn", weight: 20, tool: "Dedaub", color: "#60a5fa", blurb: "30+ token risk flags from on-chain metadata." },
-  { name: "Permissions", weight: 20, tool: "Heuristics", color: "#a78bfa", blurb: "9 patterns — 5 negative, 4 positive." },
-  { name: "Wallet approvals", weight: 15, tool: "multicall3", color: "#34d399", blurb: "ERC20 allowance blast radius across chains." },
-  { name: "TX history", weight: 10, tool: "Etherscan V2", color: "#fbbf24", blurb: "Anomaly detection on past calls." },
-  { name: "AI intent", weight: 5, tool: "Gemma 4", color: "#fb7185", blurb: "Translates findings into plain English." },
-];
+const LAYERS = SCORE_LAYERS;
 
 export function Score() {
   return (

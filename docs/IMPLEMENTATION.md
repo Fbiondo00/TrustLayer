@@ -2,19 +2,30 @@
 
 ## Context
 
-TrustLayer currently ships only the marketing surface (3D hero, problem/pipeline/score/demo/devs
-sections). The "Scan an agent" CTA is a placeholder anchor. This guide describes how to grow the
-codebase into a working scanner: paste an address or Solidity source → run an 8-step mechanical
-analysis pipeline → display an A+ to F trust grade.
+TrustLayer is a **security orchestrator with three thin client surfaces**. This repo is the **web client** — a Next.js 16 app that ships the marketing landing today and will grow into a working scanner. The two sibling clients (`@trustlayer/mcp-server` for Claude Code / Cursor / Windsurf, `@trustlayer/cli` for terminal / CI) live in a separate monorepo and consume the same orchestrator. When `@trustlayer/core` is published to npm, this repo will swap its inline `src/lib/core/` for the published package with no API changes — the inline implementation is intentionally shaped to match the canonical one.
 
-The scanner must be honest about what it can and cannot do. The landing's marketing copy makes
-specific claims (8 steps, 6 layers, security caps, +15 safety bonus). The implementation must
-satisfy every one of those claims, or degrade gracefully and say so out loud.
+This repo currently ships only the marketing surface (3D hero, problem/pipeline/score/demo/devs sections). The "Scan an agent" CTA is a placeholder anchor. This guide describes how to grow the codebase into a working scanner: paste an address or Solidity source → run an 8-step mechanical analysis pipeline → display an A+ to F trust grade.
+
+The scanner must be honest about what it can and cannot do. The landing's marketing copy makes specific claims (8 steps, 6 layers, security caps, +15 safety bonus). The implementation must satisfy every one of those claims, or degrade gracefully and say so out loud.
+
+### Verified targets (from the canonical `@trustlayer/core` implementation)
+
+These are the scores the scanner must reproduce when the pipeline runs against real inputs. They are not aspirational — they are the post-verification baseline as of 2026-06-13.
+
+| Input | Origin | Findings (H/M/L) | Score | Grade |
+|---|---|---|---|---|
+| `MaliciousAgent.sol` (local) | user source | 4 / 0 / 5 | 20 | **F** |
+| `SafeAgent.sol` (local) | user source | 0 / 0 / 3 | 97 | **A+** |
+| USDC mainnet (`0xA0b8...eB48`) | etherscan | 0 / 3 / 4 | 83 | **B+** |
+| WETH mainnet (`0xC02a...6Cc2`) | etherscan | 0 / 0 / 0 | 100 | **A+** |
+| LINK mainnet (`0x5149...86CA`) | etherscan | 0 / 1 / 0 | 90 | **A-** |
+
+All five are `slitherRan=true`. The scoring algorithm (caps, weights, bonus) is specified in Phase 2 below; it must produce these exact grades on these exact inputs.
 
 ## Scope (hybrid: pure-TS always works, external APIs activate when env is present)
 
 **In scope:**
-- A schema package-inlined under `src/lib/schema/` exporting every type, Zod schema, and constant
+- A schema layer under `src/lib/schema/` exporting every type, Zod schema, and constant
   the rest of the codebase consumes (AnalysisInput, AnalysisResult, Finding, TrustScore,
   PermissionReport, TXReport, ApprovalReport, DEFAULT_SCORE_WEIGHTS, GRADE_THRESHOLDS,
   NEGATIVE_PERMISSIONS, POSITIVE_PERMISSIONS, PIPELINE_STEPS, ANOMALY_THRESHOLDS, RISK_FLAGS,
@@ -34,10 +45,13 @@ satisfy every one of those claims, or degrade gracefully and say so out loud.
 - Demo mode: with zero env, the scanner still runs against pasted Solidity source (permissions +
   scoring + explanation live; Slither and external-API steps emit informational findings).
 
-**Out of scope (deliberately):**
+**Out of scope (deliberately, for this repo):**
 - On-chain smart contracts — they live deployed, not in this repo. Link to deployed addresses from
   the landing instead.
-- MCP server — separate deployment surface, not needed for the scanner UI.
+- **MCP server and CLI packages** — these are sibling thin clients, not out-of-scope concepts.
+  They live in the orchestrator monorepo (`@trustlayer/mcp-server`, `@trustlayer/cli`). This repo
+  is the web client only; the inline `src/lib/core/` is shaped to match the orchestrator's
+  `@trustlayer/core` so a future `pnpm add @trustlayer/core` swap requires zero code changes.
 - RAG/embeddings — adds an embedding-store dependency for marginal scan-quality lift. The LLM step
   works without RAG context.
 - Payment gate — referenced in the design but not wired into the user flow.
@@ -45,6 +59,26 @@ satisfy every one of those claims, or degrade gracefully and say so out loud.
 ## Architecture after the work lands
 
 ```
+TrustLayer orchestrator (3 thin clients, shared core)
+                    ┌─────────────────────────────────┐
+                    │   @trustlayer/core              │
+                    │   PipelineService (orchestrator) │
+                    │   SlitherRunner + DedaubClient   │
+                    │   + PermissionMapper + Scanner   │
+                    │   + LLMClient + TrustScore       │
+                    └────────────┬────────────────────┘
+                                 │
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+       ┌──────┴──────┐   ┌───────┴──────┐   ┌───────┴──────┐
+       │  THIS REPO  │   │  mcp-server  │   │  cli         │
+       │  web        │   │  Claude Code │   │  analyze     │
+       │  Next.js    │   │  Cursor      │   │  replay      │
+       │  SSR+actions│   │  Windsurf    │   │              │
+       │ THIN CLIENT │   │ THIN CLIENT  │   │ THIN CLIENT  │
+       └─────────────┘   └──────────────┘   └──────────────┘
+
+Inside this repo (web client):
 src/
 ├── app/
 │   ├── page.tsx                      (landing — already exists)
@@ -62,7 +96,7 @@ src/
 │   │   └── ApprovalsCard.tsx
 │   └── three/...                     (3D hero — already exists)
 ├── lib/
-│   ├── schema/                       (NEW — types + Zod + constants)
+│   ├── schema/                       (types + Zod + constants — mirrors @trustlayer/schema)
 │   │   ├── index.ts
 │   │   ├── types.ts
 │   │   ├── finding.ts
@@ -76,7 +110,7 @@ src/
 │   │   ├── payment.ts
 │   │   ├── services.ts
 │   │   └── zod/{analyze,decompile,token-risk-input,score-input,fix-input}.ts
-│   ├── core/                         (NEW — pipeline + services)
+│   ├── core/                         (pipeline + services — mirrors @trustlayer/core)
 │   │   ├── index.ts
 │   │   ├── pipeline.ts
 │   │   ├── trustscore.ts
@@ -88,10 +122,12 @@ src/
 │   │   ├── txhistory.ts
 │   │   ├── approval-scanner.ts
 │   │   ├── llm.ts
-│   │   └── demo.ts                   (NEW — SafeAgent / MaliciousAgent fixtures)
-│   ├── env.ts                        (NEW — typed env accessor)
-│   └── trust.ts                      (REFACTORED — UI-only helpers, imports from schema)
+│   │   └── demo.ts                   (SafeAgent / MaliciousAgent fixtures)
+│   ├── env.ts                        (typed env accessor)
+│   └── trust.ts                      (UI-only helpers, imports from schema)
 ```
+
+**Golden rule:** No security logic in `app/`, `components/`, or `actions/`. Everything — Slither invocation, Dedaub calls, permission regex, scoring, cap logic — lives in `lib/core/`. The web client's only job is to render UI, dispatch user input to the pipeline, and render results. This is what makes it a thin client over the orchestrator.
 
 ## Phased commit plan (≈8 commits, each independently shippable)
 
@@ -172,7 +208,9 @@ no access control → negative permissions flagged, score in the C/D range. Mobi
 (`MALICIOUS_AGENT_SOURCE`, `SAFE_AGENT_SOURCE`) and a `runDemo(mode)` helper that calls the real
 pipeline on the local source. The `/scanner` page gets two buttons: "Try MaliciousAgent" and
 "Try SafeAgent" that prefill the form. This makes the demo reproducible offline with zero env.
-**Verify:** click "Try SafeAgent" → pipeline runs all enabled steps → A-range grade displayed.
+**Verified targets** (must match the canonical `@trustlayer/core` post-verification baseline):
+click "Try MaliciousAgent" → **F 20/100** (4 High findings trigger cap-20). Click "Try SafeAgent"
+→ **A+ 97/100** (0 High + 0 Medium findings trigger +15 safety bonus).
 **Commit:** `feat(scanner): one-click demo fixtures (MaliciousAgent + SafeAgent)`
 
 ### Phase 8 — Honest copy + final polish
@@ -221,12 +259,27 @@ the board on `/scanner`.
 1. `pnpm install && pnpm dev` — both landing and `/scanner` render with no console errors.
 2. `pnpm typecheck` — strict mode, no errors.
 3. `pnpm build` — clean production build, both routes prerenderable where possible.
-4. Manual flow on `/scanner`:
-   - Click "Try SafeAgent" → expect A-range grade, positive permissions visible.
-   - Click "Try MaliciousAgent" → expect C/D-range grade, negative permissions flagged
-     (`transfer_unlimited`, `no_access_control`), explanation cites the cap reason.
-   - Paste arbitrary Solidity → expect permissions + score; Slither step shows skipped if no Python.
-5. With env vars set: paste a real mainnet ERC20 address → expect Etherscan + TokIn + TX +
-   approvals steps to run, full 6-layer score.
+4. Manual flow on `/scanner` — verified targets (must match `@trustlayer/core` baseline 2026-06-13):
+   - Click "Try SafeAgent" → **A+ 97/100**, positive permissions visible (limited_withdrawal,
+     whitelist, time_lock).
+   - Click "Try MaliciousAgent" → **F 20/100**, negative permissions flagged
+     (`transfer_unlimited`, `no_access_control`), explanation cites the cap-20 reason.
+   - Paste arbitrary Solidity → expect permissions + score; Slither step shows skipped if no Python
+     (cap-80 applies → max B+).
+5. With env vars set: paste a real mainnet ERC20 address → must hit verified targets:
+   - USDC `0xA0b8...eB48` → **B+ 83/100** (3 Medium `constant-function-asm` findings)
+   - WETH `0xC02a...6Cc2` → **A+ 100/100** (only Informational findings, safety bonus legit)
+   - LINK `0x5149...86CA` → **A- 90/100** (1 Medium `shadowing-abstract` finding)
 6. Lighthouse on `/scanner` ≥ 95 a11y/SEO/best-practices.
 7. `git log --oneline` shows ~8 clean incremental commits in the conventional format.
+
+### Known caveats (must be documented in README, not hidden)
+
+- **Multi-file contracts from Etherscan** (Uniswap V3, Curve, Aave): Etherscan concatenates source
+  into a single file but leaves `./` imports unresolved. Slither fails. Use mono-file ERC20 for
+  demo (USDC/WETH/LINK all work). Production fix: parse double-brace JSON to reconstruct file tree.
+- **solc-select global state**: not thread-safe. Acceptable for serial pipeline; document that
+  concurrent scans would need per-process isolation.
+- **TokIn 500 indistinguishable**: non-token input vs outage vs bogus API key all return HTTP 500
+  from Dedaub. Silent skip with `_skipped` marker in raw response; 401/403 throws with actionable
+  message.

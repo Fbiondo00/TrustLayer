@@ -20,17 +20,18 @@ const PARTICLE_BUDGET = { low: 90, normal: 220, high: 360 } as const;
 const SPARKLE_BUDGET = { low: 30, normal: 60, high: 110 } as const;
 
 /**
- * HeroScene — orchestrates the full hero composition.
+ * HeroScene — shield-first hero composition.
  *
- * Composition:
- *   - Canvas with sRGB + ACES tone mapping
- *   - Two-point lighting in brand + accent colors
- *   - TrustShield at center (interactive parallax)
- *   - ScoreRing tilted above the shield (live A+ gauge)
- *   - OrbitingRings encircling the shield
- *   - ParticleField ambient dust
- *   - Sparkles for high-frequency highlight flicker
- *   - ContactShadows to ground the scene
+ * Layers (back → front):
+ *   1. Ambient particle field + Sparkles (depth dust)
+ *   2. TrustShield crystalline mark with parallax tilt
+ *   3. ScoreRing tilted above the shield (live A+ gauge)
+ *   4. OrbitingRings encircling the shield
+ *   5. ContactShadows grounding the shield
+ *
+ * Camera frames the shield dead-center. ACES tone mapping keeps the
+ * point-light halos from blowing out. The shield is the mark — no
+ * decorative shader backdrop.
  *
  * SSR-safe via dynamic import in calling code.
  */
@@ -55,19 +56,21 @@ export function HeroScene({
       camera={{ position: [0, 0.4, 6.2], fov: 38, near: 0.1, far: 100 }}
     >
       <color attach="background" args={["#05060a"]} />
-      <fog attach="fog" args={["#05060a", 7, 18]} />
+      <fog attach="fog" args={["#05060a", 8, 20]} />
 
       <AdaptiveDpr pixelated />
       <AdaptiveEvents />
 
       <ambientLight intensity={0.35} />
       <directionalLight position={[5, 6, 4]} intensity={1.2} color="#ffffff" />
-      <pointLight position={[-5, -1, 3]} intensity={28} color="#5eead4" distance={14} decay={2} />
-      <pointLight position={[5, 2, -2]} intensity={22} color="#a78bfa" distance={14} decay={2} />
+      <pointLight position={[-5, -1, 3]} intensity={28} color="#a78bfa" distance={14} decay={2} />
+      <pointLight position={[5, 2, -2]} intensity={22} color="#c4b5fd" distance={14} decay={2} />
       <pointLight position={[0, 4, -4]} intensity={14} color="#60a5fa" distance={16} decay={2} />
 
       <Suspense fallback={null}>
-        <group position={[0, 0.1, 0]}>
+        {/* Shield composition offset right + pushed back in Z so it reads as
+            ambient atmosphere behind the Live Grade card, not a focal point. */}
+        <group position={[2.1, 0.05, -1.4]} scale={0.82}>
           <TrustShield />
           <group position={[0, 1.9, 0.4]} rotation={[0.4, 0, 0]}>
             <ScoreRing score={score} animateTo={score} radius={0.95} />
@@ -82,7 +85,7 @@ export function HeroScene({
           size={2}
           speed={0.35}
           opacity={0.55}
-          color="#5eead4"
+          color="#c4b5fd"
         />
 
         <ContactShadows

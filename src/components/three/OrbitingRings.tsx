@@ -78,7 +78,7 @@ export function OrbitingRings({
   particlesPerRing = 8,
   particleSize = 0.05,
   speed = 0.4,
-  colors = ["#5eead4", "#a78bfa", "#60a5fa"],
+  colors = ["#a78bfa", "#c4b5fd", "#60a5fa"],
   tilt = 0.35,
 }: OrbitingRingsProps) {
   const axes = useMemo(

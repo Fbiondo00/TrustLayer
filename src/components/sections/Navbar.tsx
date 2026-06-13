@@ -71,7 +71,7 @@ export function Navbar() {
           </a>
           <a
             href="#scanner"
-            className="group inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-bg transition-all hover:bg-brand-strong hover:shadow-[0_0_30px_-4px_rgba(94,234,212,0.6)]"
+            className="group inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-bg transition-all hover:bg-brand-strong hover:shadow-[0_0_30px_-4px_rgba(167,139,250,0.6)]"
           >
             Scan an agent
             <svg

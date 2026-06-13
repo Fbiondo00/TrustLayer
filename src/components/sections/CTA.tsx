@@ -56,7 +56,7 @@ export function CTA() {
             </div>
             <button
               type="submit"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-semibold text-bg shadow-[0_0_50px_-12px_rgba(94,234,212,0.6)] transition-all hover:bg-brand-strong hover:shadow-[0_0_70px_-10px_rgba(94,234,212,0.8)]"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-semibold text-bg shadow-[0_0_50px_-12px_rgba(167,139,250,0.6)] transition-all hover:bg-brand-strong hover:shadow-[0_0_70px_-10px_rgba(167,139,250,0.85)]"
             >
               Scan
               <svg

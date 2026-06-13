@@ -1,53 +1,63 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { Scene } from "@/components/three";
+import { LiveScanFeed } from "./LiveScanFeed";
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 18 },
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 22 },
   show: (i: number = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, delay: 0.1 + i * 0.08, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: 0.7, delay: 0.05 + i * 0.09, ease: [0.22, 1, 0.36, 1] },
   }),
 };
-
-const STATS = [
-  { value: "$45M", label: "lost to AI agents in Q1 2026" },
-  { value: "8", label: "steps in the analysis pipeline" },
-  { value: "A+ → F", label: "the only grade you need" },
-];
 
 export function Hero() {
   return (
     <section className="relative isolate flex min-h-screen flex-col overflow-hidden pt-16">
-      {/* Background grid */}
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-grid opacity-40" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-px bg-gradient-to-r from-transparent via-brand/40 to-transparent" />
-
-      {/* 3D Canvas — full-bleed behind text, takes pointer events for parallax */}
-      <div className="absolute inset-0 -z-10">
+      {/* 3D Canvas — ambient brand presence (shield composition). Dimmed + softened
+          via CSS so it reads as atmospheric depth, not a focal point. */}
+      <div className="absolute inset-0 -z-20 opacity-70 [filter:blur(0.4px)_brightness(0.85)]">
         <Scene intensity="normal" className="!absolute inset-0" score={97} />
       </div>
 
-      {/* Bottom fade to bg for clean transition */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-bg to-transparent" />
+      {/* Aurora wash — brand-colored atmospheric layer above the canvas */}
+      <div className="aurora-hero pointer-events-none absolute inset-0 -z-10" />
 
-      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
+      {/* Faint scan-line texture for the "verification / credit-score" vibe */}
+      <div className="scan-lines pointer-events-none absolute inset-0 -z-10 opacity-50" />
+
+      {/* Legibility veils — soften the canvas so text reads cleanly */}
+      <div className="pointer-events-none absolute inset-0 -z-[5] bg-gradient-to-r from-bg via-bg/65 to-bg/20 lg:from-bg lg:via-bg/50 lg:to-bg/10" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 -z-[5] h-72 bg-gradient-to-t from-bg via-bg/85 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-[5] h-32 bg-gradient-to-b from-bg/80 to-transparent" />
+
+      {/* Top hairline */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-[5] h-px bg-gradient-to-r from-transparent via-brand/50 to-transparent" />
+
+      <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 pb-40 sm:px-6 lg:px-8">
+        <div className="max-w-2xl lg:max-w-3xl">
           <motion.a
             href="#problem"
             variants={fadeUp}
             initial="hidden"
             animate="show"
             custom={0}
-            className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-border bg-surface/50 px-3 py-1.5 text-xs text-fg-muted backdrop-blur-md hover:border-brand/40 hover:text-fg"
+            className="pointer-events-auto group inline-flex items-center gap-2.5 rounded-full border border-danger/30 bg-danger/[0.06] py-1.5 pl-2 pr-4 text-xs text-fg/90 backdrop-blur-md transition-colors hover:border-danger/50 hover:bg-danger/[0.1]"
           >
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-danger opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-danger" />
             </span>
-            Live incident: Grok drained via Morse-code tweet — $200K on Base
+            <span className="font-mono text-[10px] uppercase tracking-widest text-danger">
+              Live
+            </span>
+            <span className="hidden sm:inline text-fg-muted">·</span>
+            <span className="hidden sm:inline text-fg-muted group-hover:text-fg">
+              Grok drained via Morse-code tweet — $200K on Base
+            </span>
+            <span className="sm:hidden text-fg-muted">Grok · $200K drained</span>
           </motion.a>
 
           <motion.h1
@@ -55,7 +65,7 @@ export function Hero() {
             initial="hidden"
             animate="show"
             custom={1}
-            className="mt-6 text-balance text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl"
+            className="mt-7 text-balance text-5xl font-semibold leading-[1.02] tracking-tight sm:text-6xl lg:text-[5.25rem]"
           >
             Before you connect,
             <br />
@@ -67,11 +77,12 @@ export function Hero() {
             initial="hidden"
             animate="show"
             custom={2}
-            className="mt-6 max-w-xl text-pretty text-lg leading-relaxed text-fg-muted"
+            className="mt-7 max-w-xl text-pretty text-lg leading-relaxed text-fg-muted sm:text-xl"
           >
-            <span className="font-semibold text-fg">TrustLayer</span> is the credit score for AI agents — a
-            wallet-agnostic preflight check that grades any agent contract from A+ to F.
-            <span className="text-fg/90"> Mechanical first, AI explains.</span>
+            <span className="font-semibold text-fg">TrustLayer</span> is the credit score for AI
+            agents — a wallet-agnostic preflight check that grades any agent contract from{" "}
+            <span className="text-fg">A+ to F</span>.{" "}
+            <span className="text-fg/90">Mechanical first, AI explains.</span>
           </motion.p>
 
           <motion.div
@@ -83,67 +94,63 @@ export function Hero() {
           >
             <a
               href="#scanner"
-              className="group inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3 text-sm font-semibold text-bg shadow-[0_0_50px_-12px_rgba(94,234,212,0.6)] transition-all hover:bg-brand-strong hover:shadow-[0_0_70px_-10px_rgba(94,234,212,0.8)]"
+              className="group relative inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-semibold text-bg shadow-[0_0_60px_-12px_rgba(167,139,250,0.65),0_8px_24px_-12px_rgba(167,139,250,0.5)] transition-all hover:bg-brand-strong hover:shadow-[0_0_80px_-10px_rgba(167,139,250,0.9),0_10px_30px_-12px_rgba(167,139,250,0.6)]"
             >
-              Try the scanner
+              Scan an agent
               <svg
-                className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                className="h-4 w-4 transition-transform group-hover:translate-x-1"
                 viewBox="0 0 12 12"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M2 6h8M6 2l4 4-4 4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </a>
             <a
               href="#pipeline"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-surface/60 px-6 py-3 text-sm font-semibold text-fg backdrop-blur-md transition-all hover:border-border-strong hover:bg-surface"
+              className="group inline-flex items-center gap-2.5 rounded-full border border-border-strong bg-bg-elevated/70 px-6 py-3.5 text-sm font-semibold text-fg backdrop-blur-md transition-all hover:border-brand/50 hover:bg-bg-elevated"
             >
-              See the 8-step pipeline
+              See the pipeline
+              <svg
+                className="h-3.5 w-3.5 text-fg-muted transition-colors group-hover:text-brand"
+                viewBox="0 0 12 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M2 4h8M2 6h6M2 8h8"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </a>
           </motion.div>
-
-          <motion.dl
-            variants={fadeUp}
-            initial="hidden"
-            animate="show"
-            custom={4}
-            className="pointer-events-auto mt-14 grid max-w-2xl grid-cols-1 gap-6 sm:grid-cols-3"
-          >
-            {STATS.map((s) => (
-              <div key={s.label} className="border-l border-border pl-4">
-                <dt className="text-2xl font-semibold tracking-tight text-gradient">{s.value}</dt>
-                <dd className="mt-1 text-xs leading-relaxed text-fg-muted">{s.label}</dd>
-              </div>
-            ))}
-          </motion.dl>
         </div>
       </div>
 
-      {/* Floating grade badge */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.8, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="pointer-events-none absolute right-4 top-24 hidden lg:block"
-      >
-        <div className="glass flex flex-col items-center rounded-2xl px-4 py-3 shadow-[0_0_40px_-12px_rgba(94,234,212,0.45)]">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-fg-muted">Live grade</span>
-          <span className="text-3xl font-semibold text-safe">A+</span>
-          <span className="text-[10px] text-fg-muted">97 / 100</span>
-        </div>
-      </motion.div>
-
-      {/* Scroll hint */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 0.8 }}
-        className="pointer-events-none absolute inset-x-0 bottom-6 mx-auto flex w-fit items-center gap-2 text-[11px] uppercase tracking-widest text-fg-subtle"
-      >
-        <span>Scroll</span>
-        <span className="h-8 w-px animate-pulse bg-gradient-to-b from-fg-subtle to-transparent" />
-      </motion.div>
+      {/* Bottom: live scan feed + scroll hint */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-6 mx-auto flex w-full max-w-7xl flex-col items-center gap-3 px-4 sm:px-6 lg:px-8">
+        <LiveScanFeed />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.9, duration: 0.8 }}
+          className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-fg-subtle"
+        >
+          <span>See the pipeline</span>
+          <span className="relative flex h-8 w-px">
+            <span className="absolute inset-0 animate-pulse bg-gradient-to-b from-brand via-fg-subtle to-transparent" />
+          </span>
+        </motion.div>
+      </div>
     </section>
   );
 }
