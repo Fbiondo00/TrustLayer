@@ -36,5 +36,8 @@ next-env.d.ts
 .vscode/
 .idea/
 
+# claude code
+.claude/
+
 # os
 Thumbs.db

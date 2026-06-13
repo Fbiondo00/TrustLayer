@@ -101,3 +101,8 @@ body {
 .animate-marquee {
   animation: marquee 40s linear infinite;
 }
+
+.mask-fade {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
