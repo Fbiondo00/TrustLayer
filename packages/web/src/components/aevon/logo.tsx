@@ -1,11 +1,12 @@
+import Link from 'next/link'
 import { siteConfig } from '@/lib/site'
 
 export function Logo({ withLabel = true }: { withLabel?: boolean }) {
   return (
-    <a
-      href="#hero"
+    <Link
+      href="/"
       className="flex items-center gap-2.5 no-underline"
-      aria-label={`${siteConfig.name} — back to top`}
+      aria-label={`${siteConfig.name} — home`}
     >
       <img
         src="/logo.png"
@@ -18,6 +19,6 @@ export function Logo({ withLabel = true }: { withLabel?: boolean }) {
           {siteConfig.name}
         </span>
       )}
-    </a>
+    </Link>
   )
 }
