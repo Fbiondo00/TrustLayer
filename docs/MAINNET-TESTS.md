@@ -42,6 +42,7 @@ To run the mainnet path in the web app, set these env vars in `.env.local`:
 | `OPENAI_API_KEY` + `OPENAI_BASE_URL` | optional | Step 8 AI intent analysis. Falls back to deterministic `ScoreExplainer` when unset |
 | `REDHAT_API_URL` + `REDHAT_API_KEY` | optional | Red Hat / AssistAI LLM gateway (overrides OpenAI vars) |
 | `ANALYSIS_MODEL` | optional | Override LLM model id (default: Gemma 4 via AssistAI gateway) |
+| `HELIUS_RPC_URL` o `SOLANA_RPC_URL` | optional (Solana only) | Step 1-3 della pipeline Solana (authority, history, SPL approvals). Fallback automatico a `https://api.mainnet-beta.solana.com` (rate-limited, demo-only) |
 
 Plus host dependencies:
 
@@ -147,6 +148,35 @@ Both produce the same score because they import the same `PipelineService`. See 
 - **Dedaub TokIn returns HTTP 500** → silently skipped (indistinguishable from "not a token" / outage / bogus key). Step 4's sub-score defaults to 100 (neutral). The pipeline continues.
 - **Etherscan rate-limited (HTTP 429)** → Step 1 fails with an informative error. The pipeline stops. Wait and retry, or fall back to the demo fixtures.
 - **`OPENAI_API_KEY` unset** → Step 8 falls back to deterministic `ScoreExplainer`. The score is unchanged — AI is translator, not detector.
+
+---
+
+## Solana pipeline (implemented, not yet verified)
+
+Solana ha un'orchestrazione separata (`SolanaPipelineService` in `packages/core/src/solana/pipeline.ts`) perché condivide con EVM solo la struttura dell'output (`PipelineEvent`) ma non gli strumenti:
+
+- ❌ Niente Slither (Solidity-only)
+- ❌ Niente Dedaub (EVM bytecode)
+- ❌ Niente ERC20 approvals (Solana usa SPL con modello delegated amount diverso)
+
+**5 step Solana-flavored** (match `SOLANA_PIPELINE_STEPS` in `@trustlayer/schema`):
+
+| Step | ID | Source | Cosa fa |
+|---|---|---|---|
+| 1 | authority | Helius RPC | `getAccountInfo` su program + ProgramData → upgradeable? upgrade authority? mint/freeze authority? |
+| 2 | history | Helius RPC | `getSignaturesForAddress` → età, error rate, volume anomaly |
+| 3 | approvals | Helius RPC | `getTokenAccountsByOwner` + delegated amounts → unlimited approvals flag |
+| 4 | ai | Gemma 4 | Traduce findings in plain English (come EVM step 8) |
+| 5 | verification | Solana FM | Source verified? Audit registry (OtterSec, Neodyme, ecc.) |
+
+**Nota sull'ordine:** l'esecuzione è `1 → 2 → 3 → 5 → 4` (verification prima di AI). È intenzionale: verification arricchisce il context per il LLM. I `step` ID rimangono fissi (4=ai, 5=verification) per coerenza con la UI che li mostra nell'ordine dichiarato in `SOLANA_PIPELINE_STEPS`.
+
+**Verifica:** non abbiamo ancora un target Solana verificato end-to-end con score noto (i verified targets USDC / WETH / LINK sono tutti EVM). Per riprodurre serve `HELIUS_RPC_URL` (o `SOLANA_RPC_URL`) in `.env.local`. Senza, la pipeline cade sul public mainnet endpoint (rate-limited, demo only).
+
+```bash
+HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=... \
+  pnpm trustlayer:cli analyze <solana-program-address>
+```
 
 ---
 
