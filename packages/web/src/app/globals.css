@@ -22,11 +22,33 @@
   --color-info: #60a5fa;
   --color-accent: #c4b5fd;
 
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
 
   --shadow-glow: 0 0 80px -20px rgba(167, 139, 250, 0.45);
   --shadow-card: 0 30px 60px -30px rgba(0, 0, 0, 0.7);
+
+  /* ovia tokens — ported, accent overridden to TrustLayer purple.
+     These coexist with TrustLayer tokens above; landing components
+     reference them via Tailwind's [var(--color-aevon-*)] classes. */
+  --color-aevon-bg: #000000;
+  --color-aevon-surface: rgba(248, 250, 252, 0.1);
+  --color-aevon-primary: #f8fafc;
+  --color-aevon-secondary: #94a3b8;
+  --color-aevon-accent: #a78bfa;
+  --color-aevon-accent-hover: #8b5cf6;
+  --color-aevon-link: #c4b5fd;
+  --color-aevon-border: rgba(248, 250, 252, 0.15);
+
+  /* ovia spacing scale */
+  --space-xs: 10px;
+  --space-sm: 20px;
+  --space-md: 30px;
+  --space-lg: 40px;
+  --space-xl: 60px;
+  --space-2xl: 100px;
+  --space-3xl: 180px;
 }
 
 :root {
@@ -168,4 +190,75 @@ section[id] {
 }
 .skip-link:focus {
   top: 1rem;
+}
+
+/* ─── ovia animation primitives ──────────────────────────────────────────
+   Ported from ovia/globals.css. Marquee renamed to avoid clashing with
+   TrustLayer's existing `.animate-marquee` (40s) — ovia's is 30s. */
+
+@keyframes ovia-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: ovia-marquee 30s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+.anim-fade-up {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+.anim-fade-up-lg {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+.anim-slide-in {
+  opacity: 0;
+  transform: translateX(-60px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.anim-visible {
+  opacity: 1;
+  transform: translateX(0) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-fade-up,
+  .anim-fade-up-lg,
+  .anim-slide-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .marquee-track {
+    animation: none;
+  }
+}
+
+.faq-answer {
+  overflow: hidden;
+  transition: max-height 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+/* ovia custom cursor — color overridden to TrustLayer purple */
+.cursor-follower {
+  pointer-events: none;
+  position: fixed;
+  width: 17px;
+  height: 17px;
+  background-color: #a78bfa;
+  border-radius: 100px;
+  z-index: 9999;
+  transition: transform 0.1s ease, opacity 0.2s ease;
+  transform: translate(-50%, -50%);
+}
+
+/* Heading font — Syne via --font-heading layout wiring */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
 }
