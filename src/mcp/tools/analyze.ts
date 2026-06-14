@@ -17,7 +17,12 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { AnalyzeInputSchema, chainEnum, PIPELINE_STEPS } from "@/lib/schema";
 import { getPipeline } from "@/lib/core";
 
-const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+/**
+ * MCP tool regex must accept both address families — chain-aware narrowing
+ * happens downstream in `AnalyzeInputSchema.parse(args)`. EVM = 0x + 40 hex,
+ * Solana = base58, 32-44 chars.
+ */
+const ADDRESS_RE = /^(0x[a-fA-F0-9]{40}|[1-9A-HJ-NP-Za-km-z]{32,44})$/;
 
 export function registerAnalyzeTool(server: McpServer) {
   server.tool(
@@ -26,7 +31,7 @@ export function registerAnalyzeTool(server: McpServer) {
     {
       input_type: z
         .enum(["source", "bytecode", "address"])
-        .describe("'source' = Solidity pasted directly, 'bytecode' = hex EVM bytecode, 'address' = deployed 0x… contract"),
+        .describe("'source' = Solidity pasted directly, 'bytecode' = hex EVM bytecode, 'address' = deployed contract (0x… on EVM, base58 on Solana)"),
       chain: chainEnum.describe("Chain the target lives on"),
       source: z
         .string()
@@ -42,7 +47,7 @@ export function registerAnalyzeTool(server: McpServer) {
         .string()
         .regex(ADDRESS_RE)
         .optional()
-        .describe("Deployed contract address (required when input_type='address')"),
+        .describe("Deployed contract address — EVM (0x + 40 hex) or Solana base58 (required when input_type='address')"),
       name: z
         .string()
         .optional()
