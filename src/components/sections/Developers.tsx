@@ -7,9 +7,11 @@ const SURFACES = [
   {
     label: "Web",
     title: "Browser scanner",
-    body: "The consumer surface. Paste a contract address or Solidity source, get an A+ → F grade with the full breakdown. Lives in this repo.",
+    body: "The consumer surface. Paste a contract address or Solidity source, get an A+ → F grade with the full breakdown. No install, no keys for the local demos.",
     href: "/scanner",
     cta: "Open scanner",
+    install: `# No install — open the deployed URL
+open https://trustlayer.app/scanner`,
   },
   {
     label: "MCP Server",
@@ -24,6 +26,20 @@ const SURFACES = [
       "trustlayer_score",
       "trustlayer_fix",
     ],
+    install: `# .mcp.json (Claude Code / Cursor / Windsurf)
+{
+  "mcpServers": {
+    "trustlayer": {
+      "command": "pnpm",
+      "args": ["trustlayer:mcp"],
+      "env": {
+        "ETHERSCAN_API_KEY": "<your-key>",
+        "DEDAUB_API_KEY": "<your-key>",
+        "ETH_RPC_URL": "<your-rpc-url>"
+      }
+    }
+  }
+}`,
   },
   {
     label: "CLI",
@@ -34,6 +50,13 @@ const SURFACES = [
       "trustlayer replay <id>",
       "trustlayer fix <source.sol>",
     ],
+    install: `# Clone + install
+git clone https://github.com/Fbiondo00/TrustLayer.git
+cd TrustLayer && pnpm install
+
+# Run
+pnpm trustlayer:cli analyze 0xA0b…eB48
+pnpm trustlayer:cli replay malicious-agent`,
   },
 ];
 
@@ -91,6 +114,17 @@ export function Developers() {
                   </div>
                 ) : null}
 
+                {surface.install ? (
+                  <div className="mt-4 overflow-hidden rounded-lg border border-border bg-bg/60">
+                    <div className="border-b border-border px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest text-fg-subtle">
+                      install
+                    </div>
+                    <pre className="overflow-x-auto px-3 py-2.5 text-[11px] leading-relaxed text-fg-muted">
+                      <code>{surface.install}</code>
+                    </pre>
+                  </div>
+                ) : null}
+
                 {surface.href ? (
                   <div className="mt-6">
                     <Link
@@ -124,6 +158,13 @@ export function Developers() {
                 <Row name="trustlayer_score" desc="Recompute the grade without re-running analysis." />
                 <Row name="trustlayer_fix" desc="LLM-patch a vulnerable contract (RAG-augmented)." />
               </dl>
+              <div className="mt-5 border-t border-border pt-4">
+                <p className="text-xs leading-relaxed text-fg-muted">
+                  Per-client install (Claude Code, Cursor, Windsurf, Continue, Zed), argument
+                  reference, and troubleshooting in{" "}
+                  <span className="font-mono text-brand">docs/MCP.md</span>.
+                </p>
+              </div>
             </div>
           </Reveal>
 
@@ -150,9 +191,10 @@ export function Developers() {
             <span className="font-mono">pnpm trustlayer:mcp</span> (stdio), the CLI with{" "}
             <span className="font-mono">pnpm trustlayer:cli &lt;command&gt;</span> — both consume
             the same <span className="font-mono">PipelineService</span> documented in{" "}
-            <span className="font-mono">docs/ARCHITECTURE.md</span>. See{" "}
-            <span className="font-mono">docs/CLI.md</span> and{" "}
-            <span className="font-mono">.mcp.json.example</span> for the full reference.
+            <span className="font-mono">docs/ARCHITECTURE.md</span>. Full references:{" "}
+            <span className="font-mono">docs/MCP.md</span>,{" "}
+            <span className="font-mono">docs/CLI.md</span>, and{" "}
+            <span className="font-mono">.mcp.json.example</span>.
           </p>
         </Reveal>
       </div>
