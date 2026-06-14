@@ -51,16 +51,16 @@ export interface GradeMeta {
  * - no Slither → 80 max → lands in B+ (80-84)
  */
 export const GRADE_THRESHOLDS: readonly GradeMeta[] = [
-  { grade: "A+", min: 95, max: 100, color: "#a78bfa", glow: "#8b5cf6", label: "Audited" },
-  { grade: "A", min: 90, max: 94, color: "#c4b5fd", glow: "#a78bfa", label: "Safe" },
-  { grade: "A-", min: 85, max: 89, color: "#5eead4", glow: "#14b8a6", label: "Safe" },
-  { grade: "B+", min: 80, max: 84, color: "#a3e635", glow: "#84cc16", label: "Mostly safe" },
-  { grade: "B", min: 74, max: 79, color: "#fbbf24", glow: "#f59e0b", label: "Caution" },
-  { grade: "B-", min: 70, max: 73, color: "#fbbf24", glow: "#f59e0b", label: "Caution" },
-  { grade: "C+", min: 60, max: 69, color: "#f59e0b", glow: "#d97706", label: "Caution" },
-  { grade: "C", min: 50, max: 59, color: "#fb923c", glow: "#f97316", label: "Risky" },
-  { grade: "D", min: 40, max: 49, color: "#fb923c", glow: "#f97316", label: "Risky" },
-  { grade: "F", min: 0, max: 39, color: "#fb7185", glow: "#f43f5e", label: "Danger" },
+  { grade: "A+", min: 97, max: 100, color: "#a78bfa", glow: "#8b5cf6", label: "Audited" },
+  { grade: "A", min: 93, max: 96, color: "#c4b5fd", glow: "#a78bfa", label: "Safe" },
+  { grade: "A-", min: 87, max: 92, color: "#5eead4", glow: "#14b8a6", label: "Safe" },
+  { grade: "B+", min: 80, max: 86, color: "#a3e635", glow: "#84cc16", label: "Mostly safe" },
+  { grade: "B", min: 73, max: 79, color: "#fbbf24", glow: "#f59e0b", label: "Caution" },
+  { grade: "B-", min: 65, max: 72, color: "#fbbf24", glow: "#f59e0b", label: "Caution" },
+  { grade: "C+", min: 55, max: 64, color: "#f59e0b", glow: "#d97706", label: "Caution" },
+  { grade: "C", min: 45, max: 54, color: "#fb923c", glow: "#f97316", label: "Risky" },
+  { grade: "D", min: 35, max: 44, color: "#fb923c", glow: "#f97316", label: "Risky" },
+  { grade: "F", min: 0, max: 34, color: "#fb7185", glow: "#f43f5e", label: "Danger" },
 ] as const;
 
 /** Penalty applied to the raw Slither-derived sub-score per finding severity. */
