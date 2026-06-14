@@ -26,7 +26,7 @@ The three mainnet contracts are mono-file ERC20 tokens — verified on Etherscan
 Reproduce the demo fixtures programmatically:
 
 ```bash
-pnpm tsx src/lib/core/__fixtures__/demo-verify.ts
+pnpm fixtures
 # PASS: MaliciousAgent → F 20/100 (expected F 20/100) — cap=two_or_more_high, bonus=+0
 # PASS: SafeAgent → A+ 97/100 (expected A+ 97/100) — cap=none, bonus=+15
 ```

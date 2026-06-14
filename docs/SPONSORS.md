@@ -31,7 +31,7 @@ Dedaub is a core pipeline dependency, not a side feature. Two of the eight steps
 
 TrustLayer ships a marketing landing (`/`) and a scanner interface (`/scanner`) built around a consistent purple-accented design system:
 
-- Tailwind CSS v4 design tokens (`bg`, `bg-elevated`, `surface`, `brand`, `safe`, `caution`, `danger`, `fg`, `fg-muted`, `fg-subtle`) declared in `src/app/globals.css`
+- Tailwind CSS v4 design tokens (`bg`, `bg-elevated`, `surface`, `brand`, `safe`, `caution`, `danger`, `fg`, `fg-muted`, `fg-subtle`) declared in `packages/web/src/app/globals.css`
 - Server-rendered landing (SSR) for SEO and first paint
 - Framer Motion entrance animations with `prefers-reduced-motion` honored
 - React Three Fiber hero scene with a shield motif

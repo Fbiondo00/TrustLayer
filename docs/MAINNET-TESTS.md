@@ -14,7 +14,7 @@ The two demo fixtures (`MaliciousAgent`, `SafeAgent`) need no env keys and are d
 | WETH | `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2` | 100/100 | **A+** | 6 × Informational (solc-version, low-level-calls) | +15 safety bonus |
 | LINK | `0x514910771AF9Ca656af840dff83E8264EcF986CA` | 90/100 | **A-** | 1 × Medium `shadowing-abstract` | no cap, no bonus |
 
-Grade thresholds: A+ ≥97, A ≥93, A- ≥87, B+ ≥80, B ≥73, B- ≥65, C+ ≥55, C ≥45, D ≥35, F <35. Defined in `src/lib/schema/score.ts`.
+Grade thresholds: A+ ≥97, A ≥93, A- ≥87, B+ ≥80, B ≥73, B- ≥65, C+ ≥55, C ≥45, D ≥35, F <35. Defined in `packages/schema/src/score.ts`.
 
 ---
 
@@ -26,7 +26,7 @@ Grade thresholds: A+ ≥97, A ≥93, A- ≥87, B+ ≥80, B ≥73, B- ≥65, C+ �
 | **MCP server** | YES | `trustlayer_analyze` tool — same engine, same scores |
 | **CLI** | YES | `trustlayer analyze <address>` — same engine, same scores |
 
-All three surfaces live in this repo. The MCP server starts with `pnpm trustlayer:mcp` (stdio); the CLI runs with `pnpm trustlayer:cli <command>` (see [`CLI.md`](./CLI.md)). Both consume the same `PipelineService` documented in [`ARCHITECTURE.md`](./ARCHITECTURE.md).
+All three surfaces live in this monorepo. The MCP server starts with `pnpm mcp` (stdio); the CLI runs with `pnpm cli <command>` (see [`CLI.md`](./CLI.md)). Both consume the same `PipelineService` documented in [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 ---
 
@@ -103,8 +103,8 @@ There is no `mainnet-verify.ts` fixture runner in this repo because it would nee
 
 ```bash
 ETHERSCAN_API_KEY=... ETH_RPC_URL=... DEDAUB_API_KEY=... \
-  pnpm tsx -e "
-    import { PipelineService } from '@/lib/core/pipeline';
+  pnpm --filter @trustlayer/core exec tsx -e "
+    import { PipelineService } from './src/pipeline';
     const p = new PipelineService();
     const input = { input_type: 'address', chain: 'ethereum', address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' };
     for await (const e of p.runAnalysis(input)) {
@@ -133,8 +133,8 @@ The MCP server exposes the umbrella tool `trustlayer_analyze` with the same inpu
 The CLI equivalent:
 
 ```bash
-pnpm trustlayer:cli analyze 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
-pnpm trustlayer:cli replay usdc-token
+pnpm cli analyze 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+pnpm cli replay usdc-token
 ```
 
 Both produce the same score because they import the same `PipelineService`. See [`CLI.md`](./CLI.md) for the full command reference, or [`.mcp.json.example`](../.mcp.json.example) for MCP server config.

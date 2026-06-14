@@ -2,7 +2,7 @@
 
 The TrustLayer MCP server exposes **seven tools** over stdio that let any MCP-aware client (Claude Code, Cursor, Windsurf, Continue, Zed, …) call the security orchestrator inline. Ask "is agent `0x…` safe?" in your editor and get the A+ → F grade back in the same conversation — no copy-paste to a browser.
 
-The server lives at [`src/mcp/server.ts`](../src/mcp/server.ts). It wraps the same `PipelineService` that powers `/scanner` and the CLI — identical scores across surfaces by construction.
+The server lives at [`packages/mcp-server/src/index.ts`](../packages/mcp-server/src/index.ts) (package `@trustlayer/mcp-server`). It wraps the same `PipelineService` that powers `/scanner` and the CLI — identical scores across surfaces by construction.
 
 ## Install
 
@@ -23,7 +23,7 @@ Then point your MCP client at this repo:
   "mcpServers": {
     "trustlayer": {
       "command": "pnpm",
-      "args": ["trustlayer:mcp"],
+      "args": ["mcp"],
       "env": {
         "ETHERSCAN_API_KEY": "<your-key>",
         "DEDAUB_API_KEY": "<your-key>",
@@ -34,7 +34,7 @@ Then point your MCP client at this repo:
 }
 ```
 
-`pnpm trustlayer:mcp` is wired to `tsx src/mcp/server.ts` in `package.json`. `tsx` handles TypeScript + path aliases (`@/lib/…`) at runtime — no build step needed.
+`pnpm mcp` is a root shortcut for `pnpm --filter @trustlayer/mcp-server dev`, which runs `tsx src/index.ts` inside `packages/mcp-server/`. `tsx` handles TypeScript + workspace imports at runtime — no build step needed.
 
 ### Option B — npx (no global install)
 
@@ -45,7 +45,7 @@ For clients that prefer `npx`:
   "mcpServers": {
     "trustlayer": {
       "command": "npx",
-      "args": ["tsx", "src/mcp/server.ts"],
+      "args": ["tsx", "packages/mcp-server/src/index.ts"],
       "cwd": "/absolute/path/to/TrustLayer",
       "env": {
         "ETHERSCAN_API_KEY": "<your-key>",
@@ -69,7 +69,7 @@ A canonical template is committed at [`.mcp.json.example`](../.mcp.json.example)
 | **Windsurf** | `~/.codeium/windsurf/mcp_config.json` | Same shape |
 | **Continue** | `~/.continue/config.json` under `experimental.mcpServers` | Same shape |
 | **Zed** | `~/.config/zed/settings.json` under `mcpServers` | Same shape |
-| **Generic MCP Inspector** | Run `npx @modelcontextprotocol/inspector pnpm trustlayer:mcp` | Live tool explorer UI at `localhost:5173` |
+| **Generic MCP Inspector** | Run `npx @modelcontextprotocol/inspector pnpm mcp` | Live tool explorer UI at `localhost:5173` |
 
 After saving the config, restart the client. Verify with `tools/list` — you should see seven tools prefixed `trustlayer_`.
 
@@ -208,7 +208,7 @@ Instead of the umbrella `analyze`, chain tools for finer control:
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `tools/list` returns empty | Server crashed at startup | Run `pnpm trustlayer:mcp` in a terminal — see the stderr |
+| `tools/list` returns empty | Server crashed at startup | Run `pnpm mcp` in a terminal — see the stderr |
 | `trustlayer_analyze` returns "Etherscan 401" | Missing `ETHERSCAN_API_KEY` | Add to the `env` block in your MCP config |
 | `trustlayer_fix` returns "LLM disabled" | Missing `OPENAI_API_KEY` | Add to env, or set `REDHAT_API_URL` + `REDHAT_API_KEY` |
 | Tools load but `analyze` on address fails | Missing `ETH_RPC_URL` | Required for bytecode fetch + multicall approvals |
@@ -217,7 +217,7 @@ Instead of the umbrella `analyze`, chain tools for finer control:
 
 ## Transport
 
-Stdio only. HTTP/SSE transport is not wired up — the server is designed for local-editor use, not remote hosting. If you need HTTP, wrap `src/mcp/server.ts` with `@modelcontextprotocol/sdk/server/streamableHttp.js` (the SDK supports it, we just don't expose it).
+Stdio only. HTTP/SSE transport is not wired up — the server is designed for local-editor use, not remote hosting. If you need HTTP, wrap `packages/mcp-server/src/index.ts` with `@modelcontextprotocol/sdk/server/streamableHttp.js` (the SDK supports it, we just don't expose it).
 
 ## See also
 

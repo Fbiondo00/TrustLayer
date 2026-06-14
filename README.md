@@ -8,9 +8,9 @@ TrustLayer runs an 8-step mechanical analysis pipeline on any AI agent smart con
 
 ---
 
-## Architecture — security orchestrator with three thin clients
+## Architecture — pnpm monorepo, one orchestrator, three thin clients
 
-This repo is the **web client** of the TrustLayer orchestrator. The two sibling clients (`@trustlayer/mcp-server` for Claude Code / Cursor / Windsurf, `@trustlayer/cli` for terminal / CI) live in a separate monorepo and consume the same orchestrator core.
+This repo is a **pnpm workspace** mirroring the canonical orchestrator structure: a single shared core (`@trustlayer/core`) consumed by three thin client surfaces — web, MCP server, and CLI. No security logic lives in the clients.
 
 ```
                     ┌─────────────────────────────────┐
@@ -24,15 +24,33 @@ This repo is the **web client** of the TrustLayer orchestrator. The two sibling 
               ┌──────────────────┼──────────────────┐
               │                  │                  │
        ┌──────┴──────┐   ┌───────┴──────┐   ┌───────┴──────┐
-       │  THIS REPO  │   │  mcp-server  │   │  cli         │
-       │  web        │   │  Claude Code │   │  analyze     │
-       │  Next.js    │   │  Cursor      │   │  replay      │
-       │  SSR+actions│   │  Windsurf    │   │              │
+       │  web        │   │  mcp-server  │   │  cli         │
+       │  Next.js    │   │  Claude Code │   │  analyze     │
+       │  SSR+actions│   │  Cursor      │   │  replay      │
+       │  Landing +  │   │  Windsurf    │   │  fix         │
+       │  /scanner   │   │              │   │              │
        │ THIN CLIENT │   │ THIN CLIENT  │   │ THIN CLIENT  │
        └─────────────┘   └──────────────┘   └──────────────┘
 ```
 
-**Golden rule:** No security logic in the client surfaces. Everything — Slither invocation, Dedaub API calls, permission regex, scoring, cap logic — lives in `src/lib/core/` (the canonical orchestrator surface, shaped to match the npm package once it lands).
+**Golden rule:** No security logic in the client surfaces. Everything — Slither invocation, Dedaub API calls, permission regex, scoring, cap logic — lives in `packages/core/src/` (the canonical orchestrator, package `@trustlayer/core`).
+
+### Repo layout
+
+```
+trustlayer/
+├── packages/
+│   ├── schema/         Types + Zod + constants (single source of truth)
+│   ├── core/           The 8-step orchestrator + services (the security engine)
+│   ├── web/            Next.js 16 app — landing + /scanner
+│   ├── mcp-server/     MCP server — Claude Code / Cursor / Windsurf
+│   ├── cli/            CLI — terminal / CI / scripts
+│   └── contracts/      Foundry demo contracts (MaliciousAgent, SafeAgent, …)
+├── docs/               Architecture, demo script, CLI/MCP reference
+├── pnpm-workspace.yaml
+├── turbo.json
+└── README.md
+```
 
 ### The 8-step pipeline
 
@@ -73,7 +91,7 @@ The scanner reproduces these grades deterministically — the demo fixtures don'
 Reproduce the demo fixtures from the scanner page (`/scanner` → "Try MaliciousAgent" / "Try SafeAgent") or programmatically:
 
 ```bash
-pnpm tsx src/lib/core/__fixtures__/demo-verify.ts
+pnpm fixtures
 ```
 
 See [`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) for the full phased implementation plan.
@@ -92,7 +110,11 @@ See [`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) for the full phased imp
 
 ```bash
 pnpm install
-pnpm dev
+pnpm dev            # turbo dev — boots all clients
+pnpm web            # web only
+pnpm mcp            # mcp-server only
+pnpm cli            # cli only (prints help)
+pnpm typecheck      # all packages
 ```
 
 Open [http://localhost:3000](http://localhost:3000). The scanner lives at [/scanner](http://localhost:3000/scanner).

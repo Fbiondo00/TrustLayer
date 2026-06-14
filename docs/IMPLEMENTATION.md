@@ -2,11 +2,11 @@
 
 ## Context
 
-TrustLayer is a **security orchestrator with three thin client surfaces**. This repo is the **web client** — a Next.js 16 app that ships the marketing landing today and will grow into a working scanner. The two sibling clients (`@trustlayer/mcp-server` for Claude Code / Cursor / Windsurf, `@trustlayer/cli` for terminal / CI) live in a separate monorepo and consume the same orchestrator. When `@trustlayer/core` is published to npm, this repo will swap its inline `src/lib/core/` for the published package with no API changes — the inline implementation is intentionally shaped to match the canonical one.
+TrustLayer is a **pnpm monorepo with one security orchestrator and three thin client surfaces**. The orchestrator (`@trustlayer/core`) lives in `packages/core/`. Three thin clients consume it: `@trustlayer/web` (Next.js 16 landing + `/scanner`), `@trustlayer/mcp-server` (stdio MCP for Claude Code / Cursor / Windsurf), and `@trustlayer/cli` (terminal / CI). All three live in this repo.
 
-This repo currently ships only the marketing surface (3D hero, problem/pipeline/score/demo/devs sections). The "Scan an agent" CTA is a placeholder anchor. This guide describes how to grow the codebase into a working scanner: paste an address or Solidity source → run an 8-step mechanical analysis pipeline → display an A+ to F trust grade.
+This doc is the **historical build plan** that produced the orchestrator and web client. The phases below shipped in order; the repo has since been restructured into the current `packages/{schema,core,web,mcp-server,cli,contracts}` layout — see the "Architecture after the work lands" section below for the current shape. The narrative descriptions of what each phase added are accurate; the `src/lib/...` paths in the phase bodies refer to the pre-monorepo layout that has since been moved under `packages/`.
 
-The scanner must be honest about what it can and cannot do. The landing's marketing copy makes specific claims (8 steps, 6 layers, security caps, +15 safety bonus). The implementation must satisfy every one of those claims, or degrade gracefully and say so out loud.
+The scanner is honest about what it can and cannot do. The landing's marketing copy makes specific claims (8 steps, 6 layers, security caps, +15 safety bonus). The implementation satisfies every one of those claims, or degrades gracefully and says so out loud.
 
 ### Verified targets (from the canonical `@trustlayer/core` implementation)
 
@@ -45,13 +45,9 @@ All five are `slitherRan=true`. The scoring algorithm (caps, weights, bonus) is 
 - Demo mode: with zero env, the scanner still runs against pasted Solidity source (permissions +
   scoring + explanation live; Slither and external-API steps emit informational findings).
 
-**Out of scope (deliberately, for this repo):**
+**Out of scope (deliberately, for the original web-only build):**
 - On-chain smart contracts — they live deployed, not in this repo. Link to deployed addresses from
   the landing instead.
-- **MCP server and CLI packages** — these are sibling thin clients, not out-of-scope concepts.
-  They live in the orchestrator monorepo (`@trustlayer/mcp-server`, `@trustlayer/cli`). This repo
-  is the web client only; the inline `src/lib/core/` is shaped to match the orchestrator's
-  `@trustlayer/core` so a future `pnpm add @trustlayer/core` swap requires zero code changes.
 - RAG/embeddings — adds an embedding-store dependency for marginal scan-quality lift. The LLM step
   works without RAG context.
 - Payment gate — referenced in the design but not wired into the user flow.
@@ -59,7 +55,7 @@ All five are `slitherRan=true`. The scoring algorithm (caps, weights, bonus) is 
 ## Architecture after the work lands
 
 ```
-TrustLayer orchestrator (3 thin clients, shared core)
+TrustLayer monorepo (3 thin clients, shared core)
                     ┌─────────────────────────────────┐
                     │   @trustlayer/core              │
                     │   PipelineService (orchestrator) │
@@ -71,63 +67,60 @@ TrustLayer orchestrator (3 thin clients, shared core)
               ┌──────────────────┼──────────────────┐
               │                  │                  │
        ┌──────┴──────┐   ┌───────┴──────┐   ┌───────┴──────┐
-       │  THIS REPO  │   │  mcp-server  │   │  cli         │
-       │  web        │   │  Claude Code │   │  analyze     │
-       │  Next.js    │   │  Cursor      │   │  replay      │
-       │  SSR+actions│   │  Windsurf    │   │              │
+       │  web        │   │  mcp-server  │   │  cli         │
+       │  Next.js    │   │  Claude Code │   │  analyze     │
+       │  SSR+actions│   │  Cursor      │   │  replay      │
+       │  Landing +  │   │  Windsurf    │   │  fix         │
+       │  /scanner   │   │              │   │              │
        │ THIN CLIENT │   │ THIN CLIENT  │   │ THIN CLIENT  │
        └─────────────┘   └──────────────┘   └──────────────┘
 
-Inside this repo (web client):
-src/
-├── app/
-│   ├── page.tsx                      (landing — already exists)
-│   ├── scanner/page.tsx              (NEW — scanner route)
-│   └── actions/analyze.ts            (NEW — server action)
-├── components/
-│   ├── sections/...                  (landing — already exists)
-│   ├── scanner/                      (NEW — scanner UI)
-│   │   ├── InputForm.tsx
-│   │   ├── PipelineProgress.tsx
-│   │   ├── ScorePanel.tsx
-│   │   ├── FindingsList.tsx
-│   │   ├── PermissionsCard.tsx
-│   │   ├── TXHistoryCard.tsx
-│   │   └── ApprovalsCard.tsx
-│   └── three/...                     (3D hero — already exists)
-├── lib/
-│   ├── schema/                       (types + Zod + constants — mirrors @trustlayer/schema)
-│   │   ├── index.ts
-│   │   ├── types.ts
-│   │   ├── finding.ts
-│   │   ├── score.ts
-│   │   ├── permission.ts
-│   │   ├── tx-report.ts
-│   │   ├── approval.ts
-│   │   ├── token-risk.ts
-│   │   ├── pipeline.ts
-│   │   ├── explanation.ts
-│   │   ├── payment.ts
-│   │   ├── services.ts
-│   │   └── zod/{analyze,decompile,token-risk-input,score-input,fix-input}.ts
-│   ├── core/                         (pipeline + services — mirrors @trustlayer/core)
-│   │   ├── index.ts
-│   │   ├── pipeline.ts
-│   │   ├── trustscore.ts
-│   │   ├── permissions.ts
-│   │   ├── explanation.ts
-│   │   ├── slither.ts
-│   │   ├── dedaub.ts
-│   │   ├── etherscan.ts
-│   │   ├── txhistory.ts
-│   │   ├── approval-scanner.ts
-│   │   ├── llm.ts
-│   │   └── demo.ts                   (SafeAgent / MaliciousAgent fixtures)
-│   ├── env.ts                        (typed env accessor)
-│   └── trust.ts                      (UI-only helpers, imports from schema)
+Current repo layout:
+packages/
+├── schema/                           @trustlayer/schema — types + Zod + constants (single source of truth)
+│   └── src/{index,finding,score,permission,approval,explanation,payment,pipeline,rag}.ts
+├── core/                             @trustlayer/core — pipeline + services (the security engine)
+│   └── src/
+│       ├── index.ts                  barrel export
+│       ├── pipeline.ts               PipelineService.runAnalysis(input)
+│       ├── trustscore.ts             6-layer composite + caps + bonus
+│       ├── permissions.ts            Regex pattern matcher (6 neg + 6 pos)
+│       ├── explanation.ts            ScoreExplainer (deterministic, fallback for LLM)
+│       ├── slither.ts                Python subprocess + solc auto-select
+│       ├── dedaub.ts                 Decompiler + TokIn
+│       ├── etherscan.ts              V2 source fetch
+│       ├── txhistory.ts              Anomaly detection
+│       ├── approval-scanner.ts       viem multicall3 (the blast-radius layer)
+│       ├── llm.ts                    OpenAI-compatible gateway
+│       ├── env.ts, dispatch.ts, embeddings.ts, rag.ts, demo.ts
+│       ├── solana/                   Solana pipeline (BPF-focused)
+│       ├── data/swc-patterns.json    RAG fixture
+│       └── __fixtures__/             demo-verify.ts, pipeline-smoke.ts, score-fixtures.ts
+├── web/                              @trustlayer/web — Next.js 16 app
+│   └── src/
+│       ├── app/
+│       │   ├── page.tsx              Landing (SSR)
+│       │   ├── scanner/page.tsx      /scanner route
+│       │   ├── actions/analyze.ts    "use server" action (useActionState)
+│       │   └── globals.css
+│       ├── components/
+│       │   ├── sections/             Hero, Problem, Pipeline, Score, Demo, Developers, Footer
+│       │   ├── scanner/              InputForm, PipelineProgress, ScorePanel, FindingsList, …
+│       │   └── three/                React Three Fiber hero scene
+│       └── lib/trust.ts              UI-only grade-color helpers
+├── mcp-server/                       @trustlayer/mcp-server — stdio MCP, 7 tools
+│   └── src/{index,tools/{analyze,decompile,token-risk,permissions,approvals,score,fix}}.ts
+├── cli/                              @trustlayer/cli — analyze / replay / fix
+│   └── src/{index,env,commands/{analyze,fix,replay}}.ts
+└── contracts/                        Foundry demo contracts (MaliciousAgent, SafeAgent, …)
+
+Root:
+├── pnpm-workspace.yaml               packages: ['packages/*']
+├── turbo.json                        build / dev / typecheck tasks
+└── package.json                      root scripts: dev/build/typecheck/web/mcp/cli/fixtures
 ```
 
-**Golden rule:** No security logic in `app/`, `components/`, or `actions/`. Everything — Slither invocation, Dedaub calls, permission regex, scoring, cap logic — lives in `lib/core/`. The web client's only job is to render UI, dispatch user input to the pipeline, and render results. This is what makes it a thin client over the orchestrator.
+**Golden rule:** No security logic in the client surfaces. Everything — Slither invocation, Dedaub calls, permission regex, scoring, cap logic — lives in `@trustlayer/core`. Each client's only job is to render its surface, dispatch user input to the pipeline, and render results. This is what makes them thin clients over the orchestrator.
 
 ## Phased commit plan (≈8 commits, each independently shippable)
 

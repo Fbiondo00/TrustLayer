@@ -217,7 +217,7 @@ The scanner reproduces these grades deterministically:
 Reproduce locally — no env keys needed for the demo fixtures:
 
 ```bash
-pnpm tsx src/lib/core/__fixtures__/demo-verify.ts
+pnpm fixtures
 ```
 
 Or in the browser: open `/scanner`, click **Try MaliciousAgent** or **Try SafeAgent**, click **Scan**.
@@ -226,30 +226,30 @@ Or in the browser: open `/scanner`, click **Try MaliciousAgent** or **Try SafeAg
 
 ## Architecture
 
-TrustLayer is a Next.js 16 app. All security logic lives in `src/lib/core/`. The web client (`src/app/`) consumes the orchestrator through a single server action driven by `useActionState`.
+TrustLayer is a pnpm monorepo. All security logic lives in `packages/core/src/` (package `@trustlayer/core`). Three thin client surfaces consume it — web (`packages/web/`), MCP server (`packages/mcp-server/`), and CLI (`packages/cli/`).
 
 ```
                     ┌─────────────────────────────────┐
-                    │   src/lib/core/                  │
+                    │   @trustlayer/core              │
                     │   PipelineService (orchestrator) │
                     │   SlitherRunner + DedaubClient   │
                     │   + PermissionMapper + Scanner   │
                     │   + LLMClient + TrustScore       │
                     └────────────┬─────────────────────┘
-                                 │  server action
-                                 │  (useActionState)
-                                 v
-                   ┌─────────────────────────────────┐
-                   │   src/app/                       │
-                   │   Next.js 16 App Router          │
-                   │   Landing (SSR)                  │
-                   │   /scanner (client component)    │
-                   └─────────────────────────────────┘
+                                 │
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+       ┌──────┴──────┐   ┌───────┴──────┐   ┌───────┴──────┐
+       │  web        │   │  mcp-server  │   │  cli         │
+       │  Next.js    │   │  Claude Code │   │  terminal    │
+       │  Landing +  │   │  Cursor      │   │  CI          │
+       │  /scanner   │   │  Windsurf    │   │              │
+       └─────────────┘   └──────────────┘   └──────────────┘
 
-src/lib/schema/ — types + constants, single source of truth
+@trustlayer/schema — types + constants, single source of truth
 ```
 
-**TypeScript end-to-end.** Server actions handle all web API logic — no separate backend, no separate language. Adding a new client surface (MCP server, CLI, Slack bot) means importing from `src/lib/core/` and writing the surface-specific glue.
+**TypeScript end-to-end.** Each client surface is a thin glue layer — adding a new one (Slack bot, Farcaster bot, GitHub Action) means `pnpm add @trustlayer/core` and writing the surface-specific glue. No detection logic in the clients.
 
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for the full pipeline specification and end-to-end address analysis flow.
 

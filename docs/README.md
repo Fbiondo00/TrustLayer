@@ -37,21 +37,35 @@ The two demo fixtures need no env keys — open `/scanner`, click **Try Maliciou
 ## Repo at a glance
 
 ```
-TrustLayer/
-├── src/
-│   ├── app/                Next.js 16 routes (landing + /scanner)
-│   │   ├── actions/        Server action driving the pipeline (useActionState)
-│   │   ├── scanner/        /scanner route (server shell + client component)
-│   │   └── page.tsx        Landing (SSR)
-│   ├── components/
-│   │   ├── sections/       Landing sections (Hero, Problem, Pipeline, Score, Demo, Developers, Footer)
-│   │   └── scanner/        Scanner UI (InputForm, PipelineProgress, ScorePanel, …)
-│   └── lib/
-│       ├── core/           The 8-step orchestrator + services (the security engine)
-│       ├── schema/         Types + constants, single source of truth
-│       └── trust.ts        Grade-color helpers consumed by the UI
-├── docs/                   This folder
-└── README.md               Project overview, env matrix, deploy notes
+TrustLayer/                              pnpm monorepo
+├── packages/
+│   ├── schema/                           @trustlayer/schema — types + constants (single source of truth)
+│   ├── core/                             @trustlayer/core — 8-step orchestrator + services (the security engine)
+│   │   ├── src/
+│   │   │   ├── pipeline.ts               PipelineService.runAnalysis(input)
+│   │   │   ├── trustscore.ts             6-layer composite + caps + bonus
+│   │   │   ├── permissions.ts            Regex pattern matcher (6 neg + 6 pos)
+│   │   │   ├── slither.ts, dedaub.ts     External-API services (env-gated)
+│   │   │   ├── etherscan.ts, txhistory.ts, approval-scanner.ts
+│   │   │   ├── llm.ts                    OpenAI-compatible gateway (AssistAI / Ollama)
+│   │   │   ├── solana/                   Solana pipeline (BPF-focused)
+│   │   │   └── __fixtures__/             demo-verify.ts, pipeline-smoke.ts
+│   │   └── data/swc-patterns.json        RAG fixture
+│   ├── web/                              @trustlayer/web — Next.js 16 app
+│   │   └── src/
+│   │       ├── app/                      Routes (landing + /scanner)
+│   │       │   ├── actions/              Server action driving the pipeline
+│   │       │   ├── scanner/              /scanner route
+│   │       │   └── page.tsx              Landing (SSR)
+│   │       ├── components/               sections/ + scanner/ + three/
+│   │       └── lib/trust.ts              UI-only grade-color helpers
+│   ├── mcp-server/                       @trustlayer/mcp-server — stdio MCP, 7 tools
+│   ├── cli/                              @trustlayer/cli — analyze / replay / fix
+│   └── contracts/                        Foundry demo contracts (MaliciousAgent, SafeAgent, …)
+├── docs/                                 This folder
+├── pnpm-workspace.yaml                   Workspace config
+├── turbo.json                            Build / dev / typecheck tasks
+└── README.md                             Project overview, env matrix, deploy notes
 ```
 
 ## Quick links

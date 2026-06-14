@@ -1,41 +1,19 @@
 {
-  "name": "trustlayer",
-  "version": "0.1.0",
+  "name": "trustlayer-monorepo",
+  "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@11.1.2",
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "fixtures": "tsx src/lib/core/__fixtures__/score-fixtures.ts",
-    "trustlayer:mcp": "tsx src/mcp/server.ts",
-    "trustlayer:cli": "tsx src/cli/index.ts"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
-    "@react-three/drei": "^10.7.7",
-    "@react-three/fiber": "^9.6.1",
-    "@solana/web3.js": "^1.98.4",
-    "framer-motion": "^12.40.0",
-    "next": "16.2.9",
-    "openai": "^6.42.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "three": "^0.180.0",
-    "viem": "^2.52.2",
-    "zod": "^4.4.3"
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "web": "pnpm --filter @trustlayer/web dev",
+    "mcp": "pnpm --filter @trustlayer/mcp-server dev",
+    "cli": "pnpm --filter @trustlayer/cli dev",
+    "fixtures": "pnpm --filter @trustlayer/core exec tsx src/__fixtures__/demo-verify.ts"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@types/three": "^0.180.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.9",
-    "tailwindcss": "^4",
-    "tsx": "^4.22.4",
+    "turbo": "^2.5.0",
     "typescript": "^5"
   },
   "pnpm": {

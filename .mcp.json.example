@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "trustlayer": {
-      "command": "npx",
-      "args": ["tsx", "src/mcp/server.ts"],
+      "command": "pnpm",
+      "args": ["mcp"],
       "env": {
         "ETHERSCAN_API_KEY": "<your-key>",
         "DEDAUB_API_KEY": "<your-key>",

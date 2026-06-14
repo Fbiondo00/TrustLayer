@@ -2,11 +2,12 @@
 
 ## Overview
 
-TrustLayer is a **security orchestrator with a thin web client**. All security logic — Slither invocation, Dedaub API calls, permission regex, scoring, cap logic, AI translation — lives in `src/lib/core/`. The web client (`src/app/`, `src/components/`) is a thin surface that consumes the orchestrator through a single Next.js server action.
+TrustLayer is a **pnpm monorepo with one security orchestrator and three thin client surfaces** (`web`, `mcp-server`, `cli`). All security logic — Slither invocation, Dedaub API calls, permission regex, scoring, cap logic, AI translation — lives in `packages/core/src/` (package `@trustlayer/core`). Each client surface consumes the orchestrator through its own thin glue layer; none of them contain detection logic.
 
 ```
                     ┌─────────────────────────────────┐
-                    │   src/lib/core/                  │
+                    │   @trustlayer/core              │
+                    │   (packages/core/src/)          │
                     │   ──────────────────             │
                     │   PipelineService (orchestrator) │
                     │                                  │
@@ -20,22 +21,23 @@ TrustLayer is a **security orchestrator with a thin web client**. All security l
                     │   ScoreExplainer                 │
                     └────────────┬─────────────────────┘
                                  │
-                                 │  src/app/actions/analyze.ts
-                                 │  ("use server" action)
-                                 │
-                          ┌──────┴──────────────────────┐
-                          │     src/app/                │
-                          │     Next.js 16 App Router   │
-                          │     Landing (SSR)           │
-                          │     /scanner (client)       │
-                          │     uses useActionState     │
-                          └─────────────────────────────┘
+              ┌──────────────────┼──────────────────┐
+              │                  │                  │
+       ┌──────┴──────────┐ ┌─────┴─────────┐ ┌──────┴──────────┐
+       │  @trustlayer/   │ │ @trustlayer/  │ │  @trustlayer/   │
+       │  web            │ │ mcp-server    │ │  cli            │
+       │  Next.js 16     │ │ stdio MCP     │ │  analyze/replay │
+       │  Landing (SSR)  │ │ 7 tools       │ │  fix            │
+       │  /scanner       │ │               │ │                 │
+       │  useActionState │ │ Claude Code,  │ │  terminal/CI    │
+       │                 │ │ Cursor, …     │ │                 │
+       └─────────────────┘ └───────────────┘ └─────────────────┘
 
-src/lib/schema/ — types + constants (single source of truth)
-src/lib/trust.ts — grade-color helpers consumed by the UI
+@trustlayer/schema (packages/schema/src/) — types + constants, single source of truth
+packages/web/src/lib/trust.ts — grade-color helpers consumed by the UI
 ```
 
-> **Golden rule:** No security logic in the client. The web client is a surface. Adding a new surface later (MCP server, CLI, Slack bot) means importing from `src/lib/core/` and writing the surface-specific glue — not duplicating detection logic.
+> **Golden rule:** No security logic in the client surfaces. Adding a new client later (Slack bot, Farcaster bot, GitHub Action) means `pnpm add @trustlayer/core` and writing the surface-specific glue — not duplicating detection logic.
 
 ---
 
@@ -48,8 +50,8 @@ src/lib/trust.ts — grade-color helpers consumed by the UI
 | UI | React 19 + Tailwind CSS v4 | Design tokens in `globals.css` |
 | 3D | React Three Fiber + three.js | Hero scene |
 | Motion | Framer Motion | Entrance + interaction |
-| Schema | `src/lib/schema/` | Types + constants, no runtime deps |
-| Pipeline | `src/lib/core/` | 8-step orchestrator + services |
+| Schema | `@trustlayer/schema` (`packages/schema/src/`) | Types + constants, no runtime deps |
+| Pipeline | `@trustlayer/core` (`packages/core/src/`) | 8-step orchestrator + services |
 | Blockchain client | viem | multicall3 for approvals |
 | Decompiler / Token risk | Dedaub API | Decompiler + TokIn |
 | Static analysis | Slither | Python subprocess, ~90 detectors |
@@ -60,7 +62,7 @@ src/lib/trust.ts — grade-color helpers consumed by the UI
 
 ## The 8-Step Pipeline
 
-`PipelineService` in `src/lib/core/pipeline.ts` orchestrates 8 steps. Each step emits `pending → running → done | error | skipped` events through an async generator; the terminal event carries the full `AnalysisResult`.
+`PipelineService` in `packages/core/src/pipeline.ts` orchestrates 8 steps. Each step emits `pending → running → done | error | skipped` events through an async generator; the terminal event carries the full `AnalysisResult`.
 
 ### Step 1: Fetch Contract
 
@@ -255,7 +257,7 @@ For USDC mainnet (`0xA0b8...eB48`), the trace resolves as: source verified via E
 - `/` — Landing page (server component, SSR for SEO)
 - `/scanner` — Scanner interface (server component shell + client component for interactivity)
 
-### Server actions (`src/app/actions/analyze.ts`)
+### Server actions (`packages/web/src/app/actions/analyze.ts`)
 
 A single `"use server"` action drives the pipeline. It validates the input (input_type, chain, address/source/bytecode), instantiates `PipelineService`, iterates the async generator, accumulates step states, and returns the final `AnalysisState`:
 
@@ -285,7 +287,7 @@ This pattern replaces SSE / WebSockets. The async generator gives streaming prog
 
 ### Graceful degradation
 
-Every external-API service in `src/lib/core/` reads its env vars at construction and exposes `isEnabled(): boolean`. When disabled, the relevant method returns `null` / empty arrays / a synthetic informational finding rather than throwing. The pipeline still completes; the user sees exactly which steps ran and which were skipped, in the pipeline progress strip.
+Every external-API service in `packages/core/src/` reads its env vars at construction and exposes `isEnabled(): boolean`. When disabled, the relevant method returns `null` / empty arrays / a synthetic informational finding rather than throwing. The pipeline still completes; the user sees exactly which steps ran and which were skipped, in the pipeline progress strip.
 
 With zero env vars set:
 
@@ -315,7 +317,7 @@ Grade thresholds: A+ ≥95, A ≥90, A- ≥85, B+ ≥80, B ≥74, B- ≥70, C+ �
 Reproduce the demo fixtures programmatically:
 
 ```bash
-pnpm tsx src/lib/core/__fixtures__/demo-verify.ts
+pnpm fixtures
 ```
 
 Or in the browser: open `/scanner`, click "Try MaliciousAgent" / "Try SafeAgent", click **Scan**.

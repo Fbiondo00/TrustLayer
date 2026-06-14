@@ -1,0 +1,28 @@
+{
+  "name": "@trustlayer/cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "bin": {
+    "trustlayer": "src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "analyze": "tsx src/index.ts analyze",
+    "fix": "tsx src/index.ts fix",
+    "replay": "tsx src/index.ts replay",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trustlayer/core": "workspace:*",
+    "@trustlayer/schema": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.22.4",
+    "typescript": "^5.7.0"
+  }
+}

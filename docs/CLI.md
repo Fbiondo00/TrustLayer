@@ -4,7 +4,7 @@ The `trustlayer` CLI is a terminal client over the same orchestrator that powers
 
 ## Install
 
-The CLI ships inside this repo (no separate package). Three ways to invoke:
+The CLI ships inside this monorepo at `packages/cli/` (package `@trustlayer/cli`). Three ways to invoke:
 
 ### pnpm script (recommended)
 
@@ -14,15 +14,15 @@ After cloning:
 git clone https://github.com/Fbiondo00/TrustLayer.git
 cd TrustLayer
 pnpm install
-pnpm trustlayer:cli <command> [options]
+pnpm cli <command> [options]
 ```
 
-`pnpm trustlayer:cli` is wired to `tsx src/cli/index.ts` in `package.json`. `tsx` handles TypeScript + path aliases (`@/lib/…`) at runtime — no build step needed.
+`pnpm cli` is a root shortcut for `pnpm --filter @trustlayer/cli dev`, which runs `tsx src/index.ts` inside `packages/cli/`. `tsx` handles TypeScript + workspace-imports at runtime — no build step needed.
 
 ### Direct tsx invocation
 
 ```bash
-pnpm tsx src/cli/index.ts <command> [options]
+pnpm --filter @trustlayer/cli exec tsx src/index.ts <command> [options]
 ```
 
 Useful when iterating on CLI internals (faster cold start than the wrapper script).
@@ -32,14 +32,14 @@ Useful when iterating on CLI internals (faster cold start than the wrapper scrip
 If you want to call `trustlayer` from anywhere:
 
 ```bash
-# Link the binary
-pnpm link --global
+# From inside the repo
+pnpm --filter @trustlayer/cli link --global
 
 # Then from any directory:
 trustlayer analyze 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
 ```
 
-This requires `~/.local/bin` (or equivalent) on your `PATH`. The binary delegates to the local `tsx + src/cli/index.ts` — you still need to be inside the repo (or set `TRUSTLAYER_REPO`) for it to resolve `@/lib/…`.
+This requires `~/.local/bin` (or equivalent) on your `PATH`. The binary delegates to the workspace `tsx + packages/cli/src/index.ts` — you still need the repo installed for it to resolve `@trustlayer/core` and `@trustlayer/schema`.
 
 ### Environment
 
@@ -88,7 +88,7 @@ trustlayer replay
 trustlayer replay malicious-agent
 ```
 
-Cache file: `src/lib/core/__fixtures__/.demo-cache.json`. Entries today:
+Cache file: `packages/core/src/__fixtures__/.demo-cache.json`. Entries today:
 
 | id | Score | Grade |
 |---|---|---|
@@ -142,15 +142,15 @@ The CLI never silently swallows errors — every failure path prints `✗ <messa
 
 ```bash
 # Just the score + grade
-pnpm trustlayer:cli analyze 0xA0b...eB48 --json | jq '.result.score'
+pnpm cli analyze 0xA0b...eB48 --json | jq '.result.score'
 
 # Just the high-severity findings
-pnpm trustlayer:cli analyze 0xA0b...eB48 --json | \
+pnpm cli analyze 0xA0b...eB48 --json | \
   jq '.result.findings[] | select(.severity == "high")'
 
 # Score a folder of contracts and fail CI on anything below B
-for sol in contracts/demo/*.sol; do
-  grade=$(pnpm trustlayer:cli analyze "$sol" --json | jq -r '.result.grade')
+for sol in packages/contracts/demo/*.sol; do
+  grade=$(pnpm cli analyze "$sol" --json | jq -r '.result.grade')
   echo "$sol → $grade"
 done
 ```
@@ -159,22 +159,22 @@ done
 
 ```bash
 # No env vars needed — replays are local-only
-pnpm trustlayer:cli replay
+pnpm cli replay
 ```
 
 ### Fix-and-iterate loop
 
 ```bash
 # 1. Capture findings from a fresh analyze
-pnpm trustlayer:cli analyze ./vulnerable.sol --json | \
+pnpm cli analyze ./vulnerable.sol --json | \
   jq '.result.findings' > findings.json
 
 # 2. Patch
-pnpm trustlayer:cli fix ./vulnerable.sol --findings findings.json --out patched.sol
+pnpm cli fix ./vulnerable.sol --findings findings.json --out patched.sol
 
 # 3. Re-analyze the patch — if findings remain, retry with attempts=1
-pnpm trustlayer:cli analyze ./patched.sol --json | jq '.result.findings'
-pnpm trustlayer:cli fix ./vulnerable.sol --findings findings.json --attempts 1 --out patched2.sol
+pnpm cli analyze ./patched.sol --json | jq '.result.findings'
+pnpm cli fix ./vulnerable.sol --findings findings.json --attempts 1 --out patched2.sol
 ```
 
 ## CI/CD integration
@@ -211,7 +211,7 @@ jobs:
           DEDAUB_API_KEY: ${{ secrets.DEDAUB_API_KEY }}
           ETH_RPC_URL: ${{ secrets.ETH_RPC_URL }}
         run: |
-          pnpm trustlayer:cli analyze ${{ inputs.target }} --json > scan.json
+          pnpm cli analyze ${{ inputs.target }} --json > scan.json
           grade=$(jq -r '.result.grade' scan.json)
           score=$(jq -r '.result.score' scan.json)
           echo "Grade: $grade ($score/100)"
@@ -237,7 +237,7 @@ files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.sol$')
 [ -z "$files" ] && exit 0
 
 for f in $files; do
-  score=$(pnpm trustlayer:cli analyze "$f" --json 2>/dev/null | jq -r '.result.score // 0')
+  score=$(pnpm cli analyze "$f" --json 2>/dev/null | jq -r '.result.score // 0')
   if [ "$score" -lt 60 ]; then
     echo "✗ $f scored $score/100 — fix vulnerabilities before committing"
     exit 1
