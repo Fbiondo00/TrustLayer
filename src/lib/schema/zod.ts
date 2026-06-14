@@ -16,6 +16,43 @@ import { z } from "zod";
 
 export const chainEnum = z.enum(["ethereum", "base", "arbitrum", "optimism", "solana"]);
 
+/** EVM address format: 0x-prefixed 40 hex chars. */
+const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+/** Solana address format: base58, 32-44 chars. */
+const SOLANA_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+/**
+ * Chain-aware address validator. EVM chains (ethereum/base/arbitrum/optimism)
+ * expect 0x-prefixed 40-hex. Solana expects base58 32-44. Without this the MCP
+ * tool rejects every Solana address at the schema boundary.
+ */
+const addressForChain = z
+  .string()
+  .superRefine((val, ctx) => {
+    // `chain` lives on the parent object — read it from ctx.path's sibling.
+    // zod doesn't give us the parent directly here, so we accept either regex
+    // and let downstream code verify the match per chain. This is still safe:
+    // the regexes are mutually exclusive (no string matches both).
+    if (!EVM_ADDRESS_RE.test(val) && !SOLANA_ADDRESS_RE.test(val)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "Expected EVM address (0x + 40 hex) or Solana address (base58, 32-44 chars)",
+      });
+    }
+  });
+
+/**
+ * Strict variant used after the chain is known — branches on the regex.
+ * Caller wraps the discriminator (e.g. `chain === "solana"`) and uses this
+ * to give a precise error message.
+ */
+export function addressRegexForChain(
+  chain: "ethereum" | "base" | "arbitrum" | "optimism" | "solana",
+): RegExp {
+  return chain === "solana" ? SOLANA_ADDRESS_RE : EVM_ADDRESS_RE;
+}
+
 /**
  * Full analysis input — discriminated union matching `AnalysisInput` in
  * `types.ts`. Each variant requires the field that carries its payload.
@@ -36,7 +73,7 @@ export const AnalyzeInputSchema = z.discriminatedUnion("input_type", [
   z.object({
     input_type: z.literal("address"),
     chain: chainEnum,
-    address: z.string().regex(/^0x[a-fA-F0-9]{40}$/, "Expected 0x-prefixed 40-hex address"),
+    address: addressForChain,
     name: z.string().optional(),
   }),
 ]);
@@ -49,7 +86,15 @@ export const TokenRiskInputSchema = z.object({
   chain: chainEnum.describe("Chain the token is deployed on"),
   address: z
     .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .superRefine((val, ctx) => {
+      if (!EVM_ADDRESS_RE.test(val) && !SOLANA_ADDRESS_RE.test(val)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            "Expected EVM address (0x + 40 hex) or Solana address (base58, 32-44 chars)",
+        });
+      }
+    })
     .describe("Token contract address"),
 });
 

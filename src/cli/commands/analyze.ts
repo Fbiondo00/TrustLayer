@@ -18,7 +18,8 @@ interface ParsedArgs {
   boolFlags: Set<string>;
 }
 
-const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+const EVM_ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+const SOLANA_ADDRESS_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const VALID_CHAINS: readonly ChainId[] = [
   "ethereum",
   "base",
@@ -27,8 +28,10 @@ const VALID_CHAINS: readonly ChainId[] = [
   "solana",
 ];
 
-function detectInputType(raw: string): "address" | "source" {
-  if (ADDRESS_RE.test(raw.trim())) return "address";
+function detectInputType(raw: string, chain: ChainId): "address" | "source" {
+  const trimmed = raw.trim();
+  const re = chain === "solana" ? SOLANA_ADDRESS_RE : EVM_ADDRESS_RE;
+  if (re.test(trimmed)) return "address";
   return "source";
 }
 
@@ -48,9 +51,6 @@ export async function analyze(args: ParsedArgs): Promise<void> {
     process.exit(1);
   }
 
-  const inputType =
-    (args.flags.type as "source" | "address" | "bytecode" | undefined) ??
-    detectInputType(raw);
   const chainArg = (args.flags.chain as ChainId | undefined) ?? "ethereum";
   if (!VALID_CHAINS.includes(chainArg)) {
     console.error(
@@ -58,6 +58,9 @@ export async function analyze(args: ParsedArgs): Promise<void> {
     );
     process.exit(1);
   }
+  const inputType =
+    (args.flags.type as "source" | "address" | "bytecode" | undefined) ??
+    detectInputType(raw, chainArg);
   const chain = chainArg;
 
   const input: AnalysisInput =
