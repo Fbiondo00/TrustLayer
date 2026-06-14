@@ -9,7 +9,8 @@
  * crashes because a key was missing.
  */
 
-import type { ChainId } from "./types";
+import type { ChainId, TrustScore } from "./types";
+import type { Finding } from "./finding";
 
 export interface SlitherConfig {
   enabled: boolean;
@@ -64,3 +65,33 @@ export const DISABLED_CONFIG: ServiceConfig = {
     base_url: "http://localhost:11434/v1",
   },
 };
+
+// ---- Trust-score calculator params / result ----
+
+export interface ScoreCalcParams {
+  findings: Finding[];
+  /** Dedaub TokIn flags fired (token-risk layer). */
+  tokenRiskFlags?: string[];
+  /** 0-100 sub-score from the permissions layer. Defaults to 50 (neutral). */
+  permissionScore?: number;
+  /** 0-100 sub-score from the TX-history layer. Defaults to 50. */
+  txScore?: number;
+  /** 0-100 sub-score from the approvals layer. Defaults to 50. */
+  approvalScore?: number;
+  /** 0-100 sub-score from the AI-intent layer. Defaults to 50. */
+  aiScore?: number;
+}
+
+export interface ComponentScores {
+  slither: number;
+  dedaub: number;
+  permissions: number;
+  txHistory: number;
+  approvals: number;
+  ai: number;
+}
+
+export interface DetailedScoreResult {
+  score: TrustScore;
+  componentScores: ComponentScores;
+}
