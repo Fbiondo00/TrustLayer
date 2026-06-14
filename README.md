@@ -95,11 +95,14 @@ Without env vars the landing renders and `/scanner` runs in demo mode against pa
 
 | Variable | Unlocks |
 |---|---|
-| `DEDAUB_API_KEY` | Dedaub decompilation + TokIn risk flags |
-| `ETHERSCAN_API_KEY` | Etherscan V2 source fetch + TX history |
-| `ETH_RPC_URL` | Bytecode fetch + wallet approvals multicall3 |
-| `POLYGON_RPC_URL` / `ARBITRUM_RPC_URL` / `OPTIMISM_RPC_URL` | Same, on alt chains |
-| `OPENAI_API_KEY` / `OPENAI_BASE_URL` | LLM intent analysis (defaults to local Ollama) |
+| `ETHERSCAN_API_KEY` | Etherscan V2 source fetch + TX-history anomalies |
+| `BASESCAN_API_KEY` / `ARBISCAN_API_KEY` / `OPTIMISM_API_KEY` | Same, on alt chains (falls back to `ETHERSCAN_API_KEY`) |
+| `DEDAUB_API_KEY` | Dedaub on-demand decompilation + TokIn risk flags |
+| `ETH_RPC_URL` | Wallet approvals multicall3 (ethereum) |
+| `BASE_RPC_URL` / `ARBITRUM_RPC_URL` / `OPTIMISM_RPC_URL` | Same, on alt chains (falls back to `ETH_RPC_URL`) |
+| `OPENAI_API_KEY` / `OPENAI_BASE_URL` | LLM intent analysis (defaults to local Ollama at `http://localhost:11434/v1`) |
+| `REDHAT_API_URL` / `REDHAT_API_KEY` | Red Hat / AssistAI gateway for LLM (overrides OpenAI vars) |
+| `ANALYSIS_MODEL` / `FIX_MODEL` | Override the LLM models used for analysis and code fixes |
 
 Slither requires Python on the host: `pip3 install --user slither-analyzer solc-select`.
 
