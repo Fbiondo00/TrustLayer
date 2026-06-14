@@ -43,6 +43,30 @@ export interface SolanaTokenAccount {
 const TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const TOKEN_2022_PROGRAM_ID = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
 
+// Retry config — only transient RPC errors (429, 5xx, network blips, timeouts)
+// are retried. Client errors and JSON-RPC -32010 (deterministic empty result)
+// propagate immediately. Conservative on purpose: ambiguous errors default to
+// not-retryable so the caller sees the real failure rather than masking it.
+const RPC_MAX_ATTEMPTS = 3;
+const RPC_BASE_DELAY_MS = 500;
+const RPC_JITTER_MS = 250;
+
+function isRetryableRpcError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message;
+  // HTTP 429 / 5xx — set by singleCall as `Solana RPC ${status}: ${body}`
+  if (/Solana RPC (429|5\d\d):/.test(msg)) return true;
+  // Network errors — fetch throws TypeError ("fetch failed", "network error")
+  if (err.name === "TypeError") return true;
+  // Timeouts — AbortSignal.timeout throws DOMException or "aborted" / "timed out"
+  if (/timeout|aborted|timed out/i.test(msg)) return true;
+  return false;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function resolveEndpoint(): string {
   const helius = process.env.HELIUS_RPC_URL;
   if (helius && helius.trim().length > 0) return helius;
@@ -69,6 +93,21 @@ export class SolanaRpcClient {
   }
 
   private async call<T>(method: string, params: unknown[]): Promise<T> {
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < RPC_MAX_ATTEMPTS; attempt++) {
+      try {
+        return await this.singleCall<T>(method, params);
+      } catch (err) {
+        lastErr = err;
+        if (!isRetryableRpcError(err) || attempt === RPC_MAX_ATTEMPTS - 1) throw err;
+        const delay = RPC_BASE_DELAY_MS * Math.pow(2, attempt) + Math.random() * RPC_JITTER_MS;
+        await sleep(delay);
+      }
+    }
+    throw lastErr; // unreachable, satisfies TS
+  }
+
+  private async singleCall<T>(method: string, params: unknown[]): Promise<T> {
     const body = JSON.stringify({
       jsonrpc: "2.0",
       id: 1,
