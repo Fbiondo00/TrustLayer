@@ -1,7 +1,7 @@
 /**
  * Token-risk layer — Dedaub TokIn risk flags for token contracts.
  *
- * When the agent IS a token (or wraps one), TokIn returns 30+ metadata-driven
+ * When the agent IS a token (or wraps one), TokIn returns 12 canonical metadata-driven
  * flags: honeypot, buy/sell tax, owner-mint, blacklist capability, proxy,
  * hidden mint, etc. Each flag has a severity; high-severity flags cap the
  * score regardless of other layers.

@@ -1,5 +1,5 @@
 /**
- * Demo fixtures — MaliciousAgent + SafeAgent from NapulETH.
+ * Demo fixtures — MaliciousAgent + SafeAgent.
  *
  * Used by the /scanner page to give judges one-click reproducible scans:
  *   - "Try MaliciousAgent" → F 20/100  (4 High findings trigger cap-20)
@@ -7,8 +7,7 @@
  *
  * These are deliberately vulnerable / deliberately safe synthetic agents —
  * NOT real contracts. They're tuned to exercise the cap logic in the score
- * calculator. Verbatim copies of the .sol files at
- * /Users/flaviobiondo/Desktop/personale/NapulETH/packages/contracts/demo/.
+ * calculator. Verbatim copies of the .sol files in `contracts/demo/`.
  */
 
 export const MALICIOUS_AGENT_SOURCE = `// SPDX-License-Identifier: MIT

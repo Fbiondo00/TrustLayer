@@ -106,7 +106,7 @@ export interface ScoreLayerMeta {
  */
 export const SCORE_LAYERS: readonly ScoreLayerMeta[] = [
   { id: "slither", name: "Slither", weight: 30, tool: "Trail of Bits", color: "#a78bfa", blurb: "~90 static vulnerability detectors." },
-  { id: "dedaub", name: "Dedaub TokIn", weight: 20, tool: "Dedaub", color: "#60a5fa", blurb: "30+ token risk flags from on-chain metadata." },
+  { id: "dedaub", name: "Dedaub TokIn", weight: 20, tool: "Dedaub", color: "#60a5fa", blurb: "12 canonical token risk flags from on-chain metadata." },
   { id: "permissions", name: "Permissions", weight: 20, tool: "Heuristics", color: "#a78bfa", blurb: "9 patterns — 5 negative, 4 positive." },
   { id: "approvals", name: "Wallet approvals", weight: 15, tool: "multicall3", color: "#5eead4", blurb: "ERC20 allowance blast radius across chains." },
   { id: "txHistory", name: "TX history", weight: 10, tool: "Etherscan V2", color: "#fbbf24", blurb: "Anomaly detection on past calls." },
