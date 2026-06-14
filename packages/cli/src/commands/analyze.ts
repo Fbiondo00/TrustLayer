@@ -35,7 +35,10 @@ function detectInputType(raw: string, chain: ChainId): "address" | "source" {
 
 function resolveSource(raw: string): string {
   // If the input is a path to an existing file, read it. Otherwise literal source.
-  const candidate = path.resolve(process.cwd(), raw);
+  // Prefer INIT_CWD (user's actual CWD) when pnpm runs us via --filter, since
+  // process.cwd() points to the package dir and breaks relative paths.
+  const base = process.env.INIT_CWD || process.cwd();
+  const candidate = path.resolve(base, raw);
   if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
     return fs.readFileSync(candidate, "utf8");
   }
