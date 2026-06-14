@@ -22,13 +22,15 @@ interface SlitherFindingLike {
 }
 
 export class LLMClient {
-  private client: OpenAI;
+  private client: OpenAI | null = null;
   private analysisModel: string;
   private fixModel: string;
   private readonly apiKey: string;
+  private readonly baseURL: string;
+  private readonly publicKey: string;
 
   constructor() {
-    const baseURL =
+    this.baseURL =
       process.env.REDHAT_API_URL?.replace(/\/v1\/chat\/completions$/, "/v1") ||
       process.env.OPENAI_BASE_URL ||
       "http://localhost:11434/v1";
@@ -45,17 +47,24 @@ export class LLMClient {
     // — public key goes in X-Langfuse-Public-Key header
     const isCombinedKey = rawKey.includes("|");
     const secretKey = isCombinedKey ? rawKey.split("|")[1]! : rawKey;
-    const publicKey = isCombinedKey ? rawKey.split("|")[0]! : "";
+    this.publicKey = isCombinedKey ? rawKey.split("|")[0]! : "";
 
-    const defaultHeaders: Record<string, string> = {
-      // AssistAI/Langfuse proxy blocks the default OpenAI SDK User-Agent
-      "User-Agent": "TrustLayer/1.0",
-    };
-    if (publicKey) {
-      defaultHeaders["X-Langfuse-Public-Key"] = publicKey;
+    // Lazy-init the OpenAI client — the SDK throws on construction if the
+    // key is empty, so we only build it when isEnabled() is true.
+    if (this.isEnabled()) {
+      const defaultHeaders: Record<string, string> = {
+        // AssistAI/Langfuse proxy blocks the default OpenAI SDK User-Agent
+        "User-Agent": "TrustLayer/1.0",
+      };
+      if (this.publicKey) {
+        defaultHeaders["X-Langfuse-Public-Key"] = this.publicKey;
+      }
+      this.client = new OpenAI({
+        apiKey: secretKey,
+        baseURL: this.baseURL,
+        defaultHeaders,
+      });
     }
-
-    this.client = new OpenAI({ apiKey: secretKey, baseURL, defaultHeaders });
 
     this.analysisModel =
       process.env.ANALYSIS_MODEL ||
@@ -78,7 +87,7 @@ export class LLMClient {
     source: string,
     findings: SlitherFindingLike[],
   ): Promise<string> {
-    if (!this.isEnabled()) {
+    if (!this.isEnabled() || !this.client) {
       throw new Error("LLMClient is disabled (OPENAI_API_KEY not set)");
     }
 
@@ -105,7 +114,7 @@ Be concise and technical.`;
     vulnerability: string,
     patterns: string,
   ): Promise<string> {
-    if (!this.isEnabled()) {
+    if (!this.isEnabled() || !this.client) {
       throw new Error("LLMClient is disabled (OPENAI_API_KEY not set)");
     }
 
@@ -128,6 +137,9 @@ ${patterns ? `\n## Reference fix patterns:\n${patterns}` : ""}`;
     user: string,
     model: string,
   ): Promise<string> {
+    if (!this.client) {
+      throw new Error("LLMClient has no OpenAI client initialized");
+    }
     const response = await this.client.chat.completions.create({
       model,
       messages: [
