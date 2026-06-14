@@ -121,6 +121,20 @@ When the Trust Score lands:
 
 > "Same engine, same scoring. Reproducible on any EVM contract."
 
+### Expected output for each mainnet target
+
+| Input | Address | Score | Grade | Top finding |
+|---|---|---|---|---|
+| USDC | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` | 83/100 | B+ | 3 × Medium `constant-function-asm` |
+| WETH | `0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2` | 100/100 | A+ | 6 × Informational (+15 bonus, 0 H + 0 M) |
+| LINK | `0x514910771AF9Ca656af840dff83E8264EcF986CA` | 90/100 | A- | 1 × Medium `shadowing-abstract` |
+
+For the full env-var matrix and failure modes (Slither missing → cap-80, Dedaub 500 → silent skip, Etherscan 429 → informative error), see [`MAINNET-TESTS.md`](./MAINNET-TESTS.md).
+
+### If env keys aren't set
+
+Act 4 falls back gracefully — the demo fixtures (MaliciousAgent / SafeAgent) still reproduce their canonical grades because the permission layer alone drives them. Skip Act 4 in that case and close on the demo fixtures from Act 2 / Act 3.
+
 ---
 
 ## The Mantra

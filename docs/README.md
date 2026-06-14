@@ -8,6 +8,7 @@
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Engineers, technical judges | 8-step pipeline spec, score math, end-to-end address flow |
 | [`PITCH.md`](./PITCH.md) | Pitch readers, judges | Problem, solution, market framing, verified targets |
 | [`DEMO.md`](./DEMO.md) | Demoers | 4-minute demo flow on `/scanner` with verified targets |
+| [`MAINNET-TESTS.md`](./MAINNET-TESTS.md) | Engineers, sponsors | USDC / WETH / LINK mainnet reproduction — env vars, expected output, failure modes |
 | [`SPONSORS.md`](./SPONSORS.md) | Sponsors | Per-sponsor alignment — what we use from each, what we'd love feedback on |
 | [`IMPLEMENTATION.md`](./IMPLEMENTATION.md) | Engineers | Phased build plan that produced this architecture |
 
@@ -56,6 +57,7 @@ TrustLayer/
 - What are we building? → [`PITCH.md`](./PITCH.md)
 - How does it work? → [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 - How do I demo it? → [`DEMO.md`](./DEMO.md)
+- How do I reproduce USDC / WETH / LINK on mainnet? → [`MAINNET-TESTS.md`](./MAINNET-TESTS.md)
 - How does it map to sponsor tracks? → [`SPONSORS.md`](./SPONSORS.md)
 - How was it built? → [`IMPLEMENTATION.md`](./IMPLEMENTATION.md)
 - Env vars and deploy notes → [`../README.md`](../README.md)
