@@ -503,12 +503,28 @@ export class SolanaPipelineService {
     verification: VerificationReport | undefined,
   ): string {
     const lines: string[] = [];
-    if (authority?.upgradeable) {
-      lines.push(`⚠️ Program is upgradeable — code can be replaced on-chain.`);
-    } else if (authority && !authority.executable) {
-      lines.push(`ℹ️ Address is a wallet (System Program owned) — no on-chain logic to audit.`);
-    } else if (authority) {
+    // Verdict text mirrors the finding emitted by checkAuthority — by
+    // construction they can't disagree. (Reading `authority.upgradeable`
+    // instead caused the Token Program bug: that flag is true whenever the
+    // owner is BPFLoaderUpgradeable, but the finding fires "frozen"
+    // whenever upgradeAuthority is null. Reading findings avoids that
+    // divergence entirely.)
+    const authFindings = authority?.findings ?? [];
+    const has = (id: string) => authFindings.some((f) => f.id === id);
+    if (has("sol-upgrade-authority-set")) {
+      lines.push(`⚠️ Program is upgradeable with active authority — code can be replaced on-chain by the upgrade signer.`);
+    } else if (has("sol-upgrade-authority-frozen")) {
+      lines.push(`✅ Program loaded via upgradeable loader but authority is renounced — effectively immutable.`);
+    } else if (has("sol-immutable-program")) {
       lines.push(`✅ Program is immutable — code is fixed on-chain.`);
+    } else if (has("sol-wallet-not-program")) {
+      lines.push(`ℹ️ Address is a wallet (System Program owned) — no on-chain logic to audit.`);
+    } else if (has("sol-system-account")) {
+      lines.push(`ℹ️ Plain System Program account — no program logic.`);
+    } else if (has("sol-unknown-owner")) {
+      lines.push(`⚠️ Unknown program owner — manual review needed.`);
+    } else if (has("sol-account-missing")) {
+      lines.push(`❌ Account not found on-chain.`);
     }
     if (approvals && approvals.findings.length === 0) {
       lines.push(`✅ No active SPL delegations — token balances cannot be drained by delegates.`);
