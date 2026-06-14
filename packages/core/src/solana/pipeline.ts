@@ -46,6 +46,8 @@ interface AuthorityReport {
   owner: string;
   dataLengthBytes: number;
   score: number;
+  /** True when the address is owned by System Program and is not executable (a plain SOL wallet). Triggers a short-circuit. */
+  isWallet: boolean;
   findings: Finding[];
 }
 
@@ -78,6 +80,55 @@ export class SolanaPipelineService {
       authority = await this.checkAuthority(input.address!);
       layersRun.push("authority");
     });
+
+    // Wallet short-circuit: if the address is a System Program wallet (no
+    // program logic on-chain), skip the remaining steps — there's nothing to
+    // score. Emit a null score + wallet-specific explanation so UIs render
+    // "N/A" instead of a misleading A+.
+    if (authority?.isWallet) {
+      const walletScore: TrustScore = {
+        score: null,
+        grade: null,
+        layer_scores: {},
+        weights: SOLANA_SCORE_WEIGHTS,
+        bonus: 0,
+        cap_reason: null,
+        not_scored_reason: "sol_wallet_not_contract",
+      };
+      const walletResult: AnalysisResult = {
+        input,
+        score: walletScore,
+        findings: authority.findings,
+        explanation: {
+          summary:
+            "ℹ️ Address is a wallet (System Program owned) — no on-chain logic to audit.",
+          verdict: "Not a contract — wallet address",
+          layers: [],
+          reasons: [
+            "This address is owned by the System Program, which means it is a plain SOL wallet, not a deployed program.",
+          ],
+          recommendations: [
+            "If you intended to scan a program, double-check the address.",
+            "If you intended to audit a token, pass the mint address instead.",
+          ],
+        } as AnalysisResult["explanation"],
+        metadata: {
+          duration_ms: Date.now() - startedAt,
+          pipeline_version: PIPELINE_VERSION,
+          layers_run: ["authority"],
+          layers_skipped: ["txHistory", "approvals", "verification", "ai"],
+          timestamp: new Date().toISOString(),
+        },
+      };
+      yield {
+        step: 0,
+        step_id: "complete",
+        status: "done",
+        duration_ms: walletResult.metadata.duration_ms,
+        result: walletResult,
+      };
+      return;
+    }
 
     // ── Step 2: TX history ───────────────────────────────────────────────
     yield* this.runStep(2, "history", async () => {
@@ -194,6 +245,7 @@ export class SolanaPipelineService {
         owner: "",
         dataLengthBytes: 0,
         score: 0,
+        isWallet: false,
         findings: [
           {
             id: "sol-account-missing",
@@ -223,6 +275,9 @@ export class SolanaPipelineService {
     const upgradeable = account.owner === BPF_LOADER_UPGRADEABLE;
     const legacy = account.owner === BPF_LOADER_LEGACY;
     const isSystem = account.owner === SYSTEM_PROGRAM;
+    // Wallet = System Program owned + non-executable. This is the short-circuit
+    // trigger in runAnalysis() — there's no program logic to audit.
+    const isWallet = isSystem && !account.executable;
 
     if (legacy) {
       findings.push({
@@ -307,6 +362,7 @@ export class SolanaPipelineService {
       owner: account.owner,
       dataLengthBytes: 0,
       score: Math.max(0, Math.min(100, score)),
+      isWallet,
       findings,
     };
   }

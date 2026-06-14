@@ -114,7 +114,11 @@ export async function analyze(args: ParsedArgs): Promise<void> {
   console.log(`────────────────────────────────────────────────────────────────────`);
   console.log(`RESULT`);
   console.log(`────────────────────────────────────────────────────────────────────`);
-  console.log(`  Trust Score:   ${score.score}/100 (grade ${score.grade})`);
+  if (score.score === null || score.grade === null) {
+    console.log(`  Trust Score:   N/A — ${score.not_scored_reason ?? "not scoreable"}`);
+  } else {
+    console.log(`  Trust Score:   ${score.score}/100 (grade ${score.grade})`);
+  }
   console.log(`  Findings:      ${findings.length}`);
   console.log(`  Elapsed:       ${elapsed}ms`);
 
@@ -156,7 +160,7 @@ export async function analyze(args: ParsedArgs): Promise<void> {
 // here. We cast defensively because PipelineService always yields a result
 // with this shape on terminal events.
 interface AnalysisResultMinimal {
-  score: { score: number; grade: string };
+  score: { score: number | null; grade: string | null; not_scored_reason?: string };
   findings: Array<{
     id: string;
     severity: string;

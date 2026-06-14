@@ -56,9 +56,9 @@ export interface AnalysisInput {
 }
 
 export interface TrustScore {
-  /** Final 0-100 score after caps + bonus. */
-  score: number;
-  grade: ScoreGrade;
+  /** Final 0-100 score after caps + bonus. Null when the address cannot be scored (e.g. Solana wallet). */
+  score: number | null;
+  grade: ScoreGrade | null;
   /** Per-layer contribution before caps/bonus (0-100 each). */
   layer_scores: Partial<Record<ScoreLayerId, number>>;
   /** Weights used for the composite (sum = 100). */
@@ -67,6 +67,8 @@ export interface TrustScore {
   bonus: number;
   /** Cap applied, if any. Null when no cap was hit. */
   cap_reason: ScoreCapReason;
+  /** Set when score is null. Identifies why scoring was skipped so UIs can render an accurate message. */
+  not_scored_reason?: string;
 }
 
 export interface AnalysisMetadata {

@@ -158,7 +158,9 @@ export class ScoreExplainer {
     }
 
     if (recs.length === 0) {
-      if (score.grade.startsWith("A")) {
+      if (!score.grade) {
+        recs.push("Score unavailable — manual review required.");
+      } else if (score.grade.startsWith("A")) {
         recs.push("Safe to connect. Run a periodic re-scan to catch regressions.");
       } else if (score.grade === "B+" || score.grade === "B" || score.grade === "B-") {
         recs.push("Connect with caution — review the findings before proceeding.");
@@ -171,6 +173,9 @@ export class ScoreExplainer {
 
   private buildVerdict(score: TrustScore): string {
     const grade = score.grade;
+    // Defensive — this code is only called from the EVM pipeline which always
+    // sets a grade, but TypeScript now allows null (Solana wallet case).
+    if (!grade) return "Not scoreable.";
     if (grade.startsWith("A")) return "Connect with confidence.";
     if (grade === "B+" || grade === "B" || grade === "B-") return "Connect with caution.";
     if (grade === "C+" || grade === "C" || grade === "D") return "Review before connecting.";
@@ -206,7 +211,7 @@ export class ScoreExplainer {
           ? ` — ${totalMed} Medium`
           : " — clean on mechanical detectors";
 
-    return `Grade ${score.grade} (${score.score}/100)${capClause}${bonusClause}${findingClause}. ${verdict}`;
+    return `Grade ${score.grade ?? "N/A"} (${score.score ?? "—"}/100)${capClause}${bonusClause}${findingClause}. ${verdict}`;
   }
 
   // ─── Layer summaries ────────────────────────────────────────────────

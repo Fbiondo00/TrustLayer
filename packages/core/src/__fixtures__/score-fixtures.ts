@@ -11,7 +11,7 @@
  */
 
 import { TrustScoreCalculator } from "../trustscore";
-import type { Finding } from "@trustlayer/schema";
+import type { Finding, TrustScore } from "@trustlayer/schema";
 
 function makeFinding(
   id: string,
@@ -21,7 +21,7 @@ function makeFinding(
   return { id, severity, title: id, source };
 }
 
-function run(name: string, calc: () => { score: number; grade: string }) {
+function run(name: string, calc: () => TrustScore) {
   const r = calc();
   console.log(`${name.padEnd(50)} → ${String(r.score).padStart(3)} / ${r.grade}`);
   return r;

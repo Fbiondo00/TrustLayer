@@ -14,6 +14,49 @@ const CAP_LABEL: Record<string, string> = {
 };
 
 export function ScorePanel({ score, metadata }: Props) {
+  // N/A case — address couldn't be scored (e.g. Solana wallet scanned as a
+  // program). Render a neutral panel instead of computing a meaningless grade.
+  if (score.score === null || score.grade === null) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-border bg-surface/40">
+        <div className="grid grid-cols-1 lg:grid-cols-5">
+          <div className="relative flex flex-col items-center justify-center p-8 lg:col-span-2">
+            <span className="font-mono text-7xl font-bold leading-none text-fg-subtle sm:text-8xl">
+              N/A
+            </span>
+            <span className="mt-3 text-[11px] uppercase tracking-widest text-fg-subtle">
+              Not a contract
+            </span>
+          </div>
+          <div className="border-t border-border p-6 lg:col-span-3 lg:border-l lg:border-t-0">
+            <p className="font-mono text-sm text-fg">
+              Address is a wallet, not a program. No on-chain logic to audit.
+            </p>
+            {score.not_scored_reason && (
+              <p className="mt-2 font-mono text-[11px] text-fg-subtle">
+                reason: {score.not_scored_reason}
+              </p>
+            )}
+            {metadata.layers_skipped.length > 0 && (
+              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                <span
+                  className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px]"
+                  style={{
+                    color: "#6b7488",
+                    borderColor: "#6b748855",
+                    background: "#6b748811",
+                  }}
+                >
+                  {metadata.layers_skipped.length} layer{metadata.layers_skipped.length === 1 ? "" : "s"} skipped
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const meta = scoreToGrade(score.score);
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface/40">

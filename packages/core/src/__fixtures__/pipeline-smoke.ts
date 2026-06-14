@@ -67,6 +67,12 @@ async function main() {
     process.exit(1);
   }
   const r = terminal.result;
+  // EVM smoke test always produces a numeric score — guard for type safety
+  // after TrustScore.score became nullable (Solana wallet case).
+  if (r.score.score == null || r.score.grade == null) {
+    console.error("FAIL: expected numeric score on EVM pipeline");
+    process.exit(1);
+  }
   console.log("\nresult:");
   console.log(JSON.stringify({
     score: r.score.score,
