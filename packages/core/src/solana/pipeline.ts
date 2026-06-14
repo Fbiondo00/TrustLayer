@@ -1,5 +1,5 @@
 /**
- * SolanaPipelineService — 4-step trust-scoring pipeline for Solana programs.
+ * SolanaPipelineService — 5-step trust-scoring pipeline for Solana programs.
  *
  * Solana ≠ EVM: there's no Slither, no Dedaub, no ERC20 allowances. Risk lives
  * in the authority structure (can the program be upgraded? by whom? can mint/
@@ -7,12 +7,12 @@
  * the same PipelineEvent shape as the EVM PipelineService so the web UI, MCP
  * server, and CLI can consume both without per-chain code paths.
  *
- * Steps:
+ * Steps (match SOLANA_PIPELINE_STEPS in @trustlayer/schema):
  *   1. Authority check     (Helius getAccountInfo on program + ProgramData)
  *   2. TX history          (Helius getSignaturesForAddress — age, errors, volume)
  *   3. SPL approvals       (Helius getTokenAccountsByOwner + delegated amounts)
- *   4. Verification        (Source verified on Solana FM? Public audit?)
- *   5. AI intent           (Optional — templated fallback if LLM disabled)
+ *   4. AI intent           (Optional — templated fallback if LLM disabled)
+ *   5. Verification        (Source verified on Solana FM? Public audit)
  */
 
 import {
@@ -142,7 +142,10 @@ export class SolanaPipelineService {
       layersRun.push("approvals");
     });
 
-    // ── Step 4: Verification (Solana FM / audit registry) ────────────────
+    // Verification runs BEFORE AI so the LLM gets source-verified + audit-registry
+    // context. The step IDs are fixed by SOLANA_PIPELINE_STEPS (4=ai, 5=verification)
+    // but execution order is intentionally swapped here.
+    // ── Step 5: Verification (Solana FM / audit registry) ────────────────
     yield* this.runStep(5, "verification", async () => {
       verification = await this.checkVerification(input.address!);
       layersRun.push("verification");
@@ -161,12 +164,13 @@ export class SolanaPipelineService {
     });
 
     // ── Compute trust score ──────────────────────────────────────────────
-    const composite =
+    const composite = (
       (authority?.score ?? NEUTRAL_AI) * (SOLANA_SCORE_WEIGHTS.authority ?? 0) +
       (txHistory?.score ?? NEUTRAL_AI) * (SOLANA_SCORE_WEIGHTS.txHistory ?? 0) +
       (approvals?.score ?? NEUTRAL_AI) * (SOLANA_SCORE_WEIGHTS.approvals ?? 0) +
       (verification?.score ?? NEUTRAL_AI) * (SOLANA_SCORE_WEIGHTS.verification ?? 0) +
-      NEUTRAL_AI * (SOLANA_SCORE_WEIGHTS.ai ?? 0) / 100 * 100;
+      NEUTRAL_AI * (SOLANA_SCORE_WEIGHTS.ai ?? 0)
+    ) / 100;
 
     const hasHighOrMedium = findings.some(
       (f) => f.severity === "high" || f.severity === "medium",

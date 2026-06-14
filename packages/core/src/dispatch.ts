@@ -3,7 +3,8 @@
  *
  * EVM chains (ethereum / base / arbitrum / optimism) run the 8-step pipeline
  * (Slither + Dedaub + permissions + TX + approvals + AI). Solana runs the
- * 4-step Solana-flavored pipeline (authority + TX + SPL + AI). Both yield the
+ * 5-step Solana-flavored pipeline (authority + TX history + SPL approvals +
+ * verification + AI). Both yield the
  * same `PipelineEvent` shape so the web/MCP/CLI surfaces don't need per-chain
  * code paths.
  */
