@@ -1,0 +1,91 @@
+[
+  {
+    "id": "malicious-agent",
+    "label": "MaliciousAgent (local demo fixture — drains wallet)",
+    "expectedGrade": "F",
+    "actualGrade": "F",
+    "actualScore": 20,
+    "sourceOrigin": "user-source",
+    "findingsCount": 11,
+    "topFindings": [
+      {
+        "severity": "High",
+        "check": "arbitrary-send",
+        "description": "MaliciousAgent.execute(address) sends arbitrary ETH to attacker-controlled target."
+      },
+      {
+        "severity": "High",
+        "check": "suicidal",
+        "description": "MaliciousAgent.kill() self-destructs the contract, forwarding balance to owner."
+      },
+      {
+        "severity": "High",
+        "check": "unchecked-transfer",
+        "description": "Token transfer return value ignored — funds can be silently lost on non-standard ERC20s."
+      }
+    ],
+    "approvalsSummary": {
+      "count": 0,
+      "unlimitedCount": 0,
+      "riskLevel": "safe",
+      "score": 100
+    },
+    "cachedAt": 1781382514092
+  },
+  {
+    "id": "safe-agent",
+    "label": "SafeAgent (local demo fixture — whitelisted + time-locked)",
+    "expectedGrade": "A+",
+    "actualGrade": "A+",
+    "actualScore": 97,
+    "sourceOrigin": "user-source",
+    "findingsCount": 2,
+    "topFindings": [
+      {
+        "severity": "Informational",
+        "check": "naming-convention",
+        "description": "Function does not follow mixed-case naming convention."
+      }
+    ],
+    "approvalsSummary": {
+      "count": 0,
+      "unlimitedCount": 0,
+      "riskLevel": "safe",
+      "score": 100
+    },
+    "cachedAt": 1781382514092
+  },
+  {
+    "id": "usdc-token",
+    "label": "USDC (mainnet verified — Circle fiat token)",
+    "expectedGrade": "B+",
+    "actualGrade": "B+",
+    "actualScore": 83,
+    "sourceOrigin": "etherscan",
+    "findingsCount": 18,
+    "topFindings": [
+      {
+        "severity": "Medium",
+        "check": "constant-function-asm",
+        "description": "AddressUtils.isContract(address) — assembly pattern in constant function."
+      },
+      {
+        "severity": "Medium",
+        "check": "constant-function-asm",
+        "description": "UpgradeabilityProxy._implementation() — assembly pattern in constant function."
+      },
+      {
+        "severity": "Medium",
+        "check": "constant-function-asm",
+        "description": "AdminUpgradeabilityProxy._admin() — assembly pattern in constant function."
+      }
+    ],
+    "approvalsSummary": {
+      "count": 0,
+      "unlimitedCount": 0,
+      "riskLevel": "safe",
+      "score": 100
+    },
+    "cachedAt": 1781382514092
+  }
+]
