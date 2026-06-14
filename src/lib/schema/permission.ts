@@ -28,8 +28,10 @@ export interface PermissionPattern {
   id: PermissionPatternId;
   /** Positive = adds to score, negative = subtracts. */
   delta: number;
-  /** Regex source string. Flags always include "i" (case-insensitive). */
+  /** Regex source string. */
   pattern: string;
+  /** Regex flags. Defaults to "i" (case-insensitive). */
+  flags?: string;
   severity: "high" | "medium" | "low" | "info";
   title: string;
   description: string;
@@ -41,7 +43,7 @@ export const NEGATIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "transfer_unlimited",
     delta: -30,
-    pattern: "\\.transfer\\s*\\(",
+    pattern: "transfer\\s*\\(\\s*(?:msg\\.sender|from)?\\s*,\\s*\\w+\\s*,\\s*(?:balance|amount|_amount|totalSupply|type\\(uint256\\)\\.max)",
     severity: "high",
     title: "Unlimited ERC20 transfer",
     description: "Contract can move tokens without an upper bound.",
@@ -50,7 +52,7 @@ export const NEGATIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "self_destruct",
     delta: -25,
-    pattern: "selfdestruct|suicide",
+    pattern: "selfdestruct\\s*\\(|suicide\\s*\\(",
     severity: "high",
     title: "Self-destruct present",
     description: "Contract can be destroyed, destroying balances with it.",
@@ -59,7 +61,7 @@ export const NEGATIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "owner_drain",
     delta: -25,
-    pattern: "onlyOwner[^;]{0,80}withdraw|withdraw[^;]{0,80}onlyOwner",
+    pattern: "onlyOwner[\\s\\S]{0,80}withdraw|withdrawAll|drain|sweep",
     severity: "high",
     title: "Owner can drain",
     description: "Owner-only withdrawal path with no cap.",
@@ -68,7 +70,7 @@ export const NEGATIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "arbitrary_call",
     delta: -20,
-    pattern: "delegatecall|\\.call\\s*\\(",
+    pattern: "\\.(call|delegatecall)\\s*\\(\\s*\\{",
     severity: "high",
     title: "Arbitrary external call",
     description: "Contract can call any address with arbitrary calldata.",
@@ -77,7 +79,7 @@ export const NEGATIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "reentrancy_exposed",
     delta: -15,
-    pattern: "\\.call\\s*\\{?value:",
+    pattern: "function\\s+\\w+[^)]*\\)\\s*(?:payable|external|public)\\s*(?!.*nonReentrant)(?!.*ReentrancyGuard)(?!.*_locked)[^{]*\\{[^}]*(?:\\.transfer\\s*\\(|\\.send\\s*\\(|\\.call\\s*\\{)",
     severity: "medium",
     title: "Reentrancy exposure",
     description: "External call with value transfer without a reentrancy guard.",
@@ -86,7 +88,8 @@ export const NEGATIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "no_access_control",
     delta: -20,
-    pattern: "function\\s+(transfer|withdraw|mint|execute|sweep|drain)\\s*\\([^)]{0,200}\\)\\s*public",
+    pattern: "^[\\s]*function\\s+(?:withdraw|drain|execute|sweep|destroy|selfdestruct|kill)\\s*\\([^)]*\\)[^{]*\\b(?:public|external)\\b(?!.*\\bonlyOwner\\b)(?!.*\\bwhenNotPaused\\b)",
+    flags: "im",
     severity: "high",
     title: "No access control",
     description: "Sensitive function is publicly callable.",
@@ -98,7 +101,7 @@ export const POSITIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "limited_withdrawal",
     delta: 15,
-    pattern: "withdrawal|withdraw[A-Z][a-z]*|maxWithdraw|DAILY|WITHDRAWAL_CAP|LIMIT",
+    pattern: "maxWithdrawal|dailyLimit|withdrawLimit|maxAmount|MAX_WITHDRAWAL|WITHDRAWAL_CAP",
     severity: "info",
     title: "Limited withdrawal",
     description: "Withdrawal is bounded by an explicit cap.",
@@ -107,7 +110,7 @@ export const POSITIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "whitelist",
     delta: 15,
-    pattern: "whitelist|allowlist|isWhitelisted|allowed",
+    pattern: "\\bwhitelist(?:ed)?\\s*\\(|onlyWhitelisted\\b|allowedAddresses\\s*=|isWhitelisted\\s*\\[|require\\s*\\(\\s*whitelisted",
     severity: "info",
     title: "Operator whitelist",
     description: "Only whitelisted addresses can act.",
@@ -116,7 +119,7 @@ export const POSITIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "time_lock",
     delta: 10,
-    pattern: "timelock|TIME_LOCK|delay[^a-zA-Z]{0,4}upgrade",
+    pattern: "timelock|timeLock|lockPeriod|unlockTime|cooldown|TIME_LOCK",
     severity: "info",
     title: "Timelock",
     description: "Sensitive actions are delayed by a timelock.",
@@ -125,7 +128,7 @@ export const POSITIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "multi_sig",
     delta: 10,
-    pattern: "multisig|multiSig|\\.length\\s*>=\\s*[2-9]",
+    pattern: "\\bmulti.?sig\\b|requireMultiple|confirmations\\s*(?:>|>=|==)",
     severity: "info",
     title: "Multi-sig control",
     description: "Critical actions require multiple signers.",
@@ -134,7 +137,7 @@ export const POSITIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "reentrancy_guard",
     delta: 10,
-    pattern: "nonReentrant|_nonReentrant|REENTRANCY",
+    pattern: "ReentrancyGuard|nonReentrant|_notEntered|_status",
     severity: "info",
     title: "Reentrancy guard",
     description: "ReentrancyGuard applied on state-changing functions.",
@@ -143,7 +146,7 @@ export const POSITIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "ownable",
     delta: 5,
-    pattern: "onlyOwner|Ownable|_owner",
+    pattern: "Ownable|onlyOwner|isOwner",
     severity: "info",
     title: "Ownable",
     description: "Ownership model in place for privileged calls.",
