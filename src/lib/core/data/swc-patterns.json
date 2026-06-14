@@ -1,0 +1,152 @@
+[
+  {
+    "swc_id": 107,
+    "name": "Reentrancy",
+    "check": "reentrancy-eth",
+    "severity": "high",
+    "description": "External call before state update allows attacker to re-enter and drain funds",
+    "vulnerable_code": "function withdraw() external {\n    uint256 amount = balances[msg.sender];\n    (bool ok, ) = msg.sender.call{value: amount}(\"\");\n    require(ok);\n    balances[msg.sender] = 0;\n}",
+    "fixed_code": "function withdraw() external nonReentrant {\n    uint256 amount = balances[msg.sender];\n    require(amount > 0);\n    balances[msg.sender] = 0;\n    (bool ok, ) = msg.sender.call{value: amount}(\"\");\n    require(ok);\n}",
+    "fix_description": "Apply Checks-Effects-Interactions pattern: zero balance BEFORE external call, add reentrancy guard"
+  },
+  {
+    "swc_id": 101,
+    "name": "Integer Overflow/Underflow",
+    "check": "integer-overflow",
+    "severity": "high",
+    "description": "Arithmetic operations can overflow/underflow leading to incorrect balances",
+    "vulnerable_code": "function transfer(address to, uint256 amount) external {\n    balances[msg.sender] -= amount;\n    balances[to] += amount;\n}",
+    "fixed_code": "using SafeMath for uint256;\n\nfunction transfer(address to, uint256 amount) external {\n    balances[msg.sender] = balances[msg.sender].sub(amount);\n    balances[to] = balances[to].add(amount);\n}",
+    "fix_description": "Use SafeMath library or Solidity 0.8+ built-in overflow checks"
+  },
+  {
+    "swc_id": 104,
+    "name": "Unchecked Call Return Value",
+    "check": "unchecked-lowlevel",
+    "severity": "medium",
+    "description": "Return value of low-level call is not checked, silently failing transfers",
+    "vulnerable_code": "function sendEther(address payable to, uint256 amount) external {\n    to.call{value: amount}(\"\");\n}",
+    "fixed_code": "function sendEther(address payable to, uint256 amount) external {\n    (bool ok, ) = to.call{value: amount}(\"\");\n    require(ok, \"Transfer failed\");\n}",
+    "fix_description": "Always check return value of .call() and revert on failure"
+  },
+  {
+    "swc_id": 105,
+    "name": "Unprotected Ether Withdrawal",
+    "check": "missing-access-control",
+    "severity": "high",
+    "description": "Anyone can withdraw funds without authorization check",
+    "vulnerable_code": "function withdraw() external {\n    payable(msg.sender).transfer(address(this).balance);\n}",
+    "fixed_code": "function withdraw() external onlyOwner {\n    payable(msg.sender).transfer(address(this).balance);\n}",
+    "fix_description": "Add access control modifier (onlyOwner, onlyAdmin, etc.)"
+  },
+  {
+    "swc_id": 106,
+    "name": "Unprotected Selfdestruct",
+    "check": "suicidal",
+    "severity": "high",
+    "description": "Contract can be self-destructed by anyone, destroying all funds",
+    "vulnerable_code": "function destroy() external {\n    selfdestruct(payable(msg.sender));\n}",
+    "fixed_code": "function destroy() external onlyOwner {\n    selfdestruct(payable(msg.sender));\n}",
+    "fix_description": "Restrict selfdestruct to owner only"
+  },
+  {
+    "swc_id": 108,
+    "name": "State Variable Default Visibility",
+    "check": "state-visibility",
+    "severity": "low",
+    "description": "State variables without explicit visibility may behave unexpectedly",
+    "vulnerable_code": "mapping(address => uint256) balances;",
+    "fixed_code": "mapping(address => uint256) private balances;",
+    "fix_description": "Always specify visibility explicitly (private, internal, public)"
+  },
+  {
+    "swc_id": 110,
+    "name": "Assert Violation",
+    "check": "incorrect-equality",
+    "severity": "medium",
+    "description": "Using assert for input validation wastes gas and may cause DoS",
+    "vulnerable_code": "function setPrice(uint256 _price) external {\n    assert(_price > 0);\n    price = _price;\n}",
+    "fixed_code": "function setPrice(uint256 _price) external {\n    require(_price > 0, \"Price must be positive\");\n    price = _price;\n}",
+    "fix_description": "Use require() for input validation, not assert()"
+  },
+  {
+    "swc_id": 112,
+    "name": "Delegatecall to Untrusted Callee",
+    "check": "controlled-delegatecall",
+    "severity": "high",
+    "description": "Delegatecall to user-controlled address can execute arbitrary code in context of contract",
+    "vulnerable_code": "function execute(address target, bytes calldata data) external {\n    (bool ok, ) = target.delegatecall(data);\n    require(ok);\n}",
+    "fixed_code": "function execute(address target, bytes calldata data) external onlyOwner {\n    require(whitelisted[target], \"Target not whitelisted\");\n    (bool ok, ) = target.delegatecall(data);\n    require(ok);\n}",
+    "fix_description": "Restrict delegatecall targets to whitelisted addresses, add access control"
+  },
+  {
+    "swc_id": 113,
+    "name": "DoS with Failed Call",
+    "check": "dos-unchecked-return-value",
+    "severity": "medium",
+    "description": "Loop over addresses where a single revert blocks all operations",
+    "vulnerable_code": "function payAll() external {\n    for (uint i = 0; i < recipients.length; i++) {\n        payable(recipients[i]).transfer(amounts[i]);\n    }\n}",
+    "fixed_code": "function payAll() external {\n    for (uint i = 0; i < recipients.length; i++) {\n        (bool ok, ) = recipients[i].call{value: amounts[i]}(\"\");\n        if (!ok) {\n            failedPayments.push(recipients[i]);\n        }\n    }\n}",
+    "fix_description": "Use pull-over-push pattern or handle individual failures gracefully"
+  },
+  {
+    "swc_id": 114,
+    "name": "Transaction Order Dependence",
+    "check": "tx-origin",
+    "severity": "medium",
+    "description": "Using tx.origin for authentication allows phishing attacks",
+    "vulnerable_code": "function withdraw() external {\n    require(tx.origin == owner);\n    payable(msg.sender).transfer(address(this).balance);\n}",
+    "fixed_code": "function withdraw() external {\n    require(msg.sender == owner, \"Not owner\");\n    payable(msg.sender).transfer(address(this).balance);\n}",
+    "fix_description": "Use msg.sender for authentication, never tx.origin"
+  },
+  {
+    "swc_id": 115,
+    "name": "Authorization through tx.origin",
+    "check": "tx-origin",
+    "severity": "medium",
+    "description": "tx.origin authentication can be exploited by phishing contracts",
+    "vulnerable_code": "function transfer(address to, uint256 amount) external {\n    require(tx.origin == owner);\n    _transfer(msg.sender, to, amount);\n}",
+    "fixed_code": "function transfer(address to, uint256 amount) external {\n    require(msg.sender == owner, \"Unauthorized\");\n    _transfer(msg.sender, to, amount);\n}",
+    "fix_description": "Replace tx.origin with msg.sender for authorization"
+  },
+  {
+    "swc_id": 116,
+    "name": "Block values as time proxies",
+    "check": "block-timestamp",
+    "severity": "low",
+    "description": "block.timestamp can be manipulated by miners within a small range",
+    "vulnerable_code": "function claimReward() external {\n    require(block.timestamp >= unlockTime);\n    _sendReward(msg.sender);\n}",
+    "fixed_code": "function claimReward() external {\n    require(block.timestamp >= unlockTime, \"Not yet unlocked\");\n    _sendReward(msg.sender);\n}",
+    "fix_description": "Accept small timestamp manipulation (15s range) for non-critical timing"
+  },
+  {
+    "swc_id": 119,
+    "name": "Shadowing State Variables",
+    "check": "shadowing-state",
+    "severity": "low",
+    "description": "Local variable shadows state variable, leading to wrong value used",
+    "vulnerable_code": "contract Base {\n    uint256 public count = 10;\n}\n\ncontract Derived is Base {\n    uint256 public count = 20;\n}",
+    "fixed_code": "contract Base {\n    uint256 public baseCount = 10;\n}\n\ncontract Derived is Base {\n    uint256 public derivedCount = 20;\n}",
+    "fix_description": "Rename variables to avoid shadowing, use distinct names"
+  },
+  {
+    "swc_id": 120,
+    "name": "Weak Randomness",
+    "check": "weak-randomness",
+    "severity": "medium",
+    "description": "Using blockhash/timestamp for randomness is predictable by miners",
+    "vulnerable_code": "function pickWinner() external {\n    uint256 winner = uint256(blockhash(block.number - 1)) % players.length;\n    address player = players[winner];\n}",
+    "fixed_code": "// Use Chainlink VRF for secure randomness\nfunction pickWinner() external {\n    uint256 requestId = COORDINATOR.requestRandomWords(\n        keyHash,\n        subscriptionId,\n        3,\n        CALLBACK_GAS_LIMIT,\n        1\n    );\n}",
+    "fix_description": "Use Chainlink VRF or commit-reveal scheme for secure randomness"
+  },
+  {
+    "swc_id": 134,
+    "name": "Message call with external data",
+    "check": "arbitrary-lowlevel-call",
+    "severity": "high",
+    "description": "Arbitrary call with user-controlled data and target",
+    "vulnerable_code": "function callTarget(address target, bytes calldata data) external payable {\n    target.call{value: msg.value}(data);\n}",
+    "fixed_code": "function callTarget(address target, bytes calldata data) external payable onlyOwner {\n    require(allowedTargets[target], \"Target not allowed\");\n    (bool ok, ) = target.call{value: msg.value}(data);\n    require(ok, \"Call failed\");\n}",
+    "fix_description": "Restrict target addresses and add access control"
+  }
+]

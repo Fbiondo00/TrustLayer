@@ -15,6 +15,8 @@ export type { FetchedSource } from "./etherscan";
 export { TXHistoryAnalyzer } from "./txhistory";
 export { ApprovalScanner } from "./approval-scanner";
 export { LLMClient } from "./llm";
+export { EmbeddingService } from "./embeddings";
+export { RAGService } from "./rag";
 export { PipelineService } from "./pipeline";
 export { ScoreExplainer } from "./explanation";
 export type { ExplainParams } from "./explanation";

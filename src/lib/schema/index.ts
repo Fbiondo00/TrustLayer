@@ -14,5 +14,6 @@ export * from "./token-risk";
 export * from "./explanation";
 export * from "./pipeline";
 export * from "./services";
+export * from "./rag";
 export * from "./types";
 export * from "./zod";
