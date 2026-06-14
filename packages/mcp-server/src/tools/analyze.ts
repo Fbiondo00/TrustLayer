@@ -1,15 +1,14 @@
 /**
  * trustlayer_analyze — full 8-step pipeline.
  *
- * Input shape adapted from NapulETH (single `input_data` string) to
- * TrustLayer's `AnalysisInput` (separate `address?` / `source?` / `bytecode?`
- * fields, discriminated on `input_type`). The MCP SDK takes a flat ZodRawShape
- * (not a discriminated union), so the inline schema is the SDK-facing shape;
- * we then re-parse through `AnalyzeInputSchema` to narrow to the typed union
- * the pipeline expects.
+ * Input shape uses `AnalysisInput` (separate `address?` / `source?` /
+ * `bytecode?` fields, discriminated on `input_type`). The MCP SDK takes a
+ * flat ZodRawShape (not a discriminated union), so the inline schema is the
+ * SDK-facing shape; we then re-parse through `AnalyzeInputSchema` to narrow
+ * to the typed union the pipeline expects.
  *
- * Event consumption also differs: TrustLayer's `PipelineEvent` is flat
- * (`{step, step_id, status, ...}`) — the terminal event carries `result`.
+ * `PipelineEvent` is flat (`{step, step_id, status, ...}`) — the terminal
+ * event carries `result`.
  */
 
 import { z } from "zod";

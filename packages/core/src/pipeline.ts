@@ -12,9 +12,6 @@
  * Demo mode (no env keys at all) still produces a real AnalysisResult —
  * permissions + slither + score + explanation always run, the score is just
  * capped at B+ by the `slither-not-run` finding.
- *
- * Ported (and reshaped to TrustLayer types) from
- * `packages/core/src/pipeline.ts` in the NapulETH orchestrator.
  */
 
 import {

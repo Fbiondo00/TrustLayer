@@ -11,9 +11,6 @@
  *   trustlayer replay [<id>]               Replay cached result(s) instantly
  *   trustlayer fix <source.sol> [options]  LLM-patch a vulnerable contract
  *   trustlayer help                        Show this help
- *
- * Adapted from NapulETH `packages/cli/src/index.ts`. Polygon dropped from
- * chain list (TrustLayer ChainId = ethereum/base/arbitrum/optimism only).
  */
 
 import { loadEnv } from "./env";

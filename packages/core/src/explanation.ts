@@ -5,10 +5,6 @@
  * report. Always runs in demo mode (no LLM needed). When the LLM step is
  * enabled (Phase 4 llm.ts), its output replaces `summary` — the structural
  * fields (layers, reasons, recommendations) stay.
- *
- * Ported (and substantially simplified) from `packages/core/src/explanation.ts`
- * in the NapulETH orchestrator. TrustLayer ships a simpler ScoreExplanation
- * shape — no per-component metadata, just layer summaries + reasons.
  */
 
 import type {

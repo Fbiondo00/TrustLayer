@@ -6,9 +6,6 @@
  * unset (or `DEMO_MODE=true`), methods return fake data instead of throwing —
  * so the web /scanner stays free and the CLI/MCP surfaces work end-to-end
  * without a deployed contract.
- *
- * Ported from NapulETH `packages/core/src/payment.ts`. Imports adapted from
- * `@trustlayer/schema` to `@trustlayer/schema`.
  */
 
 import type {

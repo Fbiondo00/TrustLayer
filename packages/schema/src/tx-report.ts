@@ -4,8 +4,6 @@
  * Pulls the agent's txlist via Etherscan V2, then runs simple statistical
  * checks against ANOMALY_THRESHOLDS. Anything that crosses a threshold
  * becomes an anomaly flag and reduces this layer's score.
- *
- * Ported from `packages/schema/src/tx-report.ts` in the NapulETH orchestrator.
  */
 
 import type { Finding } from "./finding";

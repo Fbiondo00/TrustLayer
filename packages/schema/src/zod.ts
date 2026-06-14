@@ -2,14 +2,10 @@
  * Zod input validators for the MCP server + CLI tools.
  *
  * Each schema mirrors the input shape of one orchestrator method, so MCP and
- * CLI get runtime validation for free. Adapts the NapulETH `packages/schema`
- * Zod schemas to TrustLayer's `AnalysisInput` shape (separate `address?` /
- * `source?` / `bytecode?` fields rather than a single `input_data` string)
- * and TrustLayer's `ChainId` enum (`ethereum` / `base` / `arbitrum` /
- * `optimism` — no `polygon`).
- *
- * Inline (single file) rather than the NapulETH `zod/` subdirectory because
- * TrustLayer's schema/ folder is flat by convention.
+ * CLI get runtime validation for free. Schemas target TrustLayer's
+ * `AnalysisInput` shape (separate `address?` / `source?` / `bytecode?` fields
+ * rather than a single `input_data` string) and TrustLayer's `ChainId` enum
+ * (`ethereum` / `base` / `arbitrum` / `optimism` / `solana`).
  */
 
 import { z } from "zod";

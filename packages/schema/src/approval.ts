@@ -5,8 +5,6 @@
  * spender=known_spenders)` across a curated token list per chain. Any
  * unlimited allowance is a red flag. Score factors in the number of
  * unlimiteds and high-value allowances.
- *
- * Ported from `packages/schema/src/approval.ts` in the NapulETH orchestrator.
  */
 
 import type { ChainId, EvmChainId } from "./types";

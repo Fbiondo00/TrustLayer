@@ -1,9 +1,8 @@
 /**
  * trustlayer_fix — LLM-generated Solidity patch.
  *
- * NEW tool (not in NapulETH MCP). Calls LLMClient.generateFix() with the
- * vulnerable source + the findings to patch. Backed by `FixInputSchema` in
- * `src/lib/schema/zod.ts`.
+ * Calls LLMClient.generateFix() with the vulnerable source + the findings to
+ * patch. Backed by `FixInputSchema` in `@trustlayer/schema`.
  *
  * Returns the patched Solidity source as plain text. When LLM is disabled
  * (`OPENAI_API_KEY` unset), returns an error message — the tool cannot run

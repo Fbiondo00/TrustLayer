@@ -11,9 +11,6 @@
  *   plus topic docs like `reentrancy`, `flash-loan-attacks`, …)
  *
  * All embeddings are stored in memory (hackathon scale — no external vector DB).
- *
- * Ported from NapulETH `packages/core/src/rag.ts`. Import paths adapted from
- * `@trustlayer/schema` / `./embeddings.js` to `@trustlayer/schema` / `./embeddings`.
  */
 
 import { readFileSync, readdirSync, statSync } from "fs";

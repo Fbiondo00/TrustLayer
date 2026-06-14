@@ -2,8 +2,7 @@
  * replay command — reads cached pipeline results and prints them instantly.
  *
  * Useful for stage demos when network/APIs are flaky. Cache file lives at
- * `src/lib/core/__fixtures__/.demo-cache.json` (copied from NapulETH and
- * extended with the local demo fixtures).
+ * `packages/core/src/__fixtures__/.demo-cache.json`.
  */
 
 import fs from "fs";

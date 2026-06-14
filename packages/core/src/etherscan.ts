@@ -9,8 +9,6 @@
  * Graceful degradation: returns `null` when no API key is configured OR when
  * the request fails OR when the contract isn't verified. The pipeline then
  * falls back to decompilation or emits a warning.
- *
- * Ported from `packages/core/src/etherscan.ts` in the NapulETH orchestrator.
  */
 
 import type { ChainId, EvmChainId } from "@trustlayer/schema";

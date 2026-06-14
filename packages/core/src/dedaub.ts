@@ -8,8 +8,6 @@
  * Graceful degradation: when DEDAUB_API_KEY is missing, `isEnabled()` returns
  * false and both methods throw on call. The pipeline checks `isEnabled()`
  * first and skips the step otherwise.
- *
- * Ported from `packages/core/src/dedaub.ts` in the NapulETH orchestrator.
  */
 
 import crypto from "crypto";

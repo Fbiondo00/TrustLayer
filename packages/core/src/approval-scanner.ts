@@ -8,8 +8,6 @@
  *
  * Graceful degradation: `isEnabled()` requires the chain's RPC env var OR a
  * generic `ETH_RPC_URL` fallback. When disabled, the pipeline skips this step.
- *
- * Ported from `packages/core/src/approval-scanner.ts` in the NapulETH orchestrator.
  */
 
 import { createPublicClient, http, erc20Abi, getAddress } from "viem";

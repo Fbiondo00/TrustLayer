@@ -7,8 +7,6 @@
  * `slither-not-run` finding instead. The score calculator uses that finding
  * to cap the final grade at B+ (80) — we don't claim A+ on contracts we
  * couldn't actually scan.
- *
- * Ported from `packages/core/src/slither.ts` in the NapulETH orchestrator.
  */
 
 import { execSync } from "child_process";

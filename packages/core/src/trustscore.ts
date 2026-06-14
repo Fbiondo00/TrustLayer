@@ -14,8 +14,6 @@
  *   - USDC mainnet   → B+ 83 (3 Medium `constant-function-asm`)
  *   - WETH mainnet   → A+ 100 (only Informational findings)
  *   - LINK mainnet   → A- 90 (1 Medium `shadowing-abstract`)
- *
- * Ported from `packages/core/src/trustscore.ts` in the NapulETH orchestrator.
  */
 
 import {

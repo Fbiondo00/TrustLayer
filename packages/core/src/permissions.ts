@@ -6,11 +6,6 @@
  * body. Score starts at 100 (presumed safe unless proven otherwise), each
  * match adds its delta. Final score is clamped to [0, 100] and bucketed into
  * a risk level.
- *
- * Ported from `packages/core/src/permissions.ts` in the NapulETH orchestrator.
- * Diff vs canonical: schema stores regex as strings (serializable) and the
- * mapper compiles them at construction. Risk level has 3 buckets (safe /
- * caution / danger) instead of 5.
  */
 
 import {

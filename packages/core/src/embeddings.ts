@@ -9,9 +9,9 @@
  *
  * Embeddings are cached in memory to avoid re-computing on repeated scans.
  *
- * Ported from NapulETH `packages/core/src/embeddings.ts` — preserves the
- * Langfuse combined-key splitting (`pk-lf-xxx|sk-lf-yyy`) and the bumped
- * `maxRetries: 4` (AssistAI proxy occasionally drops connections during scans).
+ * Note: Langfuse combined-key splitting (`pk-lf-xxx|sk-lf-yyy`) is preserved
+ * and `maxRetries: 4` is bumped because the AssistAI proxy occasionally drops
+ * connections during scans.
  */
 
 import OpenAI from "openai";

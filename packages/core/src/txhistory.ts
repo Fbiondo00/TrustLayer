@@ -7,8 +7,6 @@
  *
  * Graceful degradation: `isEnabled()` requires ETHERSCAN_API_KEY. The pipeline
  * skips this step entirely when the key is missing.
- *
- * Ported from `packages/core/src/txhistory.ts` in the NapulETH orchestrator.
  */
 
 import { ANOMALY_THRESHOLDS } from "@trustlayer/schema";

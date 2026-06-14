@@ -4,8 +4,6 @@
  * Reads source from a file path (or stdin via "-"), optionally reads findings
  * from a JSON file, calls LLMClient.generateFix() with RAG context, writes
  * the patched source to stdout (or to --out <path>).
- *
- * NEW command (not in NapulETH CLI).
  */
 
 import fs from "fs";

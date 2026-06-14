@@ -1,10 +1,8 @@
 /**
  * analyze command — runs the 8-step pipeline on the input and prints the result.
  *
- * Adapted from NapulETH CLI:
- * - TrustLayer PipelineEvent is flat (`event.step === 0` + `event.result`).
- * - Input is `{input_type, chain, source?/bytecode?/address?}` not single `input_data`.
- * - Polygon dropped from chain list.
+ * PipelineEvent shape is flat (`event.step === 0` + `event.result`).
+ * Input is `{input_type, chain, source?/bytecode?/address?}`.
  */
 
 import fs from "fs";

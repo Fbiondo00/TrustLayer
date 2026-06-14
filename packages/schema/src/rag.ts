@@ -1,10 +1,8 @@
 /**
  * RAG + embeddings types — TrustLayer convention is no `I` prefix on interfaces.
  *
- * Mirrors `IRAGService` / `IEmbeddingService` / `RAGResult` from NapulETH's
- * `packages/schema/src/services.ts` but drops the `I` to match the rest of
- * this repo (`SlitherRunner`, `DedaubClient`, …). The implementations live in
- * `src/lib/core/embeddings.ts` and `src/lib/core/rag.ts`.
+ * The implementations live in `packages/core/src/embeddings.ts` and
+ * `packages/core/src/rag.ts`.
  */
 
 export interface RAGResult {
