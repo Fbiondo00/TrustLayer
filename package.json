@@ -20,9 +20,7 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "sharp",
-      "unrs-resolver"
-    ],
-    "ignoredBuiltDependencies": [
+      "unrs-resolver",
       "bufferutil",
       "utf-8-validate"
     ]
