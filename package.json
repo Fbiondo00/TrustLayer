@@ -8,11 +8,15 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "fixtures": "tsx src/lib/core/__fixtures__/score-fixtures.ts"
+    "fixtures": "tsx src/lib/core/__fixtures__/score-fixtures.ts",
+    "trustlayer:mcp": "tsx src/mcp/server.ts",
+    "trustlayer:cli": "tsx src/cli/index.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
+    "beeai-framework": "^0.1.29",
     "framer-motion": "^12.40.0",
     "next": "16.2.9",
     "openai": "^6.42.0",
