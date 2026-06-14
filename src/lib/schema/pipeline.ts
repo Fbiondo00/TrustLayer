@@ -86,4 +86,18 @@ export const SUPPORTED_CHAINS: readonly ChainId[] = [
   "base",
   "arbitrum",
   "optimism",
+  "solana",
+] as const;
+
+/**
+ * Solana-specific pipeline steps. Mirrors the EVM `PIPELINE_STEPS` shape but
+ * with a 4-step Solana-flavored flow: authority check, TX history, SPL
+ * approvals, AI intent. Used by the landing + scanner UI when chain=solana.
+ */
+export const SOLANA_PIPELINE_STEPS: readonly PipelineStepMeta[] = [
+  { step: 1, id: "authority", name: "Authority check", weight: 30, blurb: "Upgrade authority, mint/freeze authority, executable flag.", tool: "Helius RPC", phase: "scan", is_setup: false },
+  { step: 2, id: "history", name: "TX history", weight: 25, blurb: "Anomaly detection on past signatures.", tool: "Helius RPC", phase: "analyze", is_setup: false },
+  { step: 3, id: "approvals", name: "SPL approvals", weight: 20, blurb: "Delegated token amounts and unlimited approvals.", tool: "Helius RPC", phase: "analyze", is_setup: false },
+  { step: 4, id: "ai", name: "AI intent", weight: 10, blurb: "Translates findings into plain English.", tool: "Gemma 4", phase: "explain", is_setup: false },
+  { step: 5, id: "verification", name: "Verification", weight: 15, blurb: "Source verified + audit registry.", tool: "Solana FM", phase: "scan", is_setup: false },
 ] as const;

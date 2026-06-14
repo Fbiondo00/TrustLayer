@@ -14,7 +14,7 @@
 
 import { z } from "zod";
 
-export const chainEnum = z.enum(["ethereum", "base", "arbitrum", "optimism"]);
+export const chainEnum = z.enum(["ethereum", "base", "arbitrum", "optimism", "solana"]);
 
 /**
  * Full analysis input — discriminated union matching `AnalysisInput` in

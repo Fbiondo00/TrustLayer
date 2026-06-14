@@ -15,7 +15,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { AnalyzeInputSchema, chainEnum, PIPELINE_STEPS } from "@/lib/schema";
-import { PipelineService } from "@/lib/core";
+import { getPipeline } from "@/lib/core";
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 
@@ -52,7 +52,7 @@ export function registerAnalyzeTool(server: McpServer) {
       // Narrow the flat MCP args to the typed AnalysisInput union.
       // Throws ZodError if the required field for the variant is missing.
       const input = AnalyzeInputSchema.parse(args);
-      const pipeline = new PipelineService();
+      const pipeline = getPipeline(input.chain);
       const events: Array<{
         step: number;
         id: string;

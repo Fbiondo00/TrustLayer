@@ -11,7 +11,7 @@
 
 "use server";
 
-import { PipelineService } from "@/lib/core";
+import { getPipeline } from "@/lib/core";
 import type {
   AnalysisInput,
   AnalysisResult,
@@ -79,7 +79,7 @@ export async function analyze(
     return { error: "Bytecode mode requires bytecode (hex starting with 0x)." };
   }
 
-  const pipeline = new PipelineService();
+  const pipeline = getPipeline(input.chain);
   const steps: AnalysisStepState[] = [];
   let result: AnalysisResult | undefined;
 

@@ -25,12 +25,16 @@ export type ScoreGrade =
   | "F";
 
 export type ScoreLayerId =
+  // EVM layers
   | "slither"
   | "dedaub"
   | "permissions"
   | "approvals"
   | "txHistory"
-  | "ai";
+  | "ai"
+  // Solana layers
+  | "authority" // program upgradeable / mint / freeze authority hygiene
+  | "verification"; // source verified + audit registry
 
 export interface GradeMeta {
   grade: ScoreGrade;
@@ -137,8 +141,26 @@ export const DEFAULT_SCORE_WEIGHTS: Record<ScoreLayerId, number> = SCORE_LAYERS.
     acc[layer.id] = layer.weight;
     return acc;
   },
-  {} as Record<ScoreLayerId, number>,
+  // Solana layers default to 0 in the EVM catalog (landing only renders EVM).
+  { authority: 0, verification: 0 } as Record<ScoreLayerId, number>,
 );
+
+/**
+ * Solana layer weights. Different from EVM because Slither/Dedaub don't exist
+ * for Solana — risk lives in the authority structure (upgradeable authority,
+ * mint/freeze authority) and on-chain behavior instead.
+ */
+export const SOLANA_SCORE_WEIGHTS: Record<ScoreLayerId, number> = {
+  authority: 30,
+  verification: 15,
+  txHistory: 25,
+  approvals: 20,
+  ai: 10,
+  // EVM layers unused on Solana
+  slither: 0,
+  dedaub: 0,
+  permissions: 0,
+};
 
 export function scoreToGrade(score: number): GradeMeta {
   const clamped = Math.max(0, Math.min(100, Math.round(score)));

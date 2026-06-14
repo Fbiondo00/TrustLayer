@@ -9,7 +9,7 @@
 
 import fs from "fs";
 import path from "path";
-import { PipelineService } from "@/lib/core";
+import { getPipeline } from "@/lib/core";
 import type { AnalysisInput, ChainId } from "@/lib/schema";
 
 interface ParsedArgs {
@@ -24,6 +24,7 @@ const VALID_CHAINS: readonly ChainId[] = [
   "base",
   "arbitrum",
   "optimism",
+  "solana",
 ];
 
 function detectInputType(raw: string): "address" | "source" {
@@ -78,10 +79,10 @@ export async function analyze(args: ParsedArgs): Promise<void> {
           : `${(input.bytecode ?? "").length} chars of bytecode`;
     console.log(`▶ input:    ${inputPreview}`);
     console.log(`▶ chain:    ${chain}`);
-    console.log(`▶ pipeline: 8 steps running...\n`);
+    console.log(`▶ pipeline: ${chain === "solana" ? "4 steps (Solana)" : "8 steps"} running...\n`);
   }
 
-  const pipeline = new PipelineService();
+  const pipeline = getPipeline(input.chain);
   const startedAt = Date.now();
   let finalResult: AnalysisResultMinimal | null = null;
 

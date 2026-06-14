@@ -9,7 +9,7 @@
  * Ported from `packages/schema/src/approval.ts` in the NapulETH orchestrator.
  */
 
-import type { ChainId } from "./types";
+import type { ChainId, EvmChainId } from "./types";
 import type { Finding } from "./finding";
 
 export type ApprovalRiskTier = "unlimited" | "high_value" | "limited" | "none";
@@ -61,7 +61,7 @@ export interface ApprovalReport {
  * spenders carry the full penalty.
  */
 export const WHITELISTED_SPENDERS: Record<
-  ChainId,
+  EvmChainId,
   Array<{ address: string; label: string }>
 > = {
   ethereum: [
@@ -89,7 +89,7 @@ export const WHITELISTED_SPENDERS: Record<
  * spenders × tokens.
  */
 export const DEFAULT_TOKEN_LIST: Record<
-  ChainId,
+  EvmChainId,
   Array<{ address: string; symbol: string; decimals: number }>
 > = {
   ethereum: [

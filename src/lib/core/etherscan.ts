@@ -13,18 +13,18 @@
  * Ported from `packages/core/src/etherscan.ts` in the NapulETH orchestrator.
  */
 
-import type { ChainId } from "@/lib/schema";
+import type { ChainId, EvmChainId } from "@/lib/schema";
 
 const EXPLORER_API_V2 = "https://api.etherscan.io/v2/api";
 
-const CHAIN_ID: Record<ChainId, number> = {
+const CHAIN_ID: Record<EvmChainId, number> = {
   ethereum: 1,
   base: 8453,
   arbitrum: 42161,
   optimism: 10,
 };
 
-const API_KEY_ENV: Record<ChainId, string[]> = {
+const API_KEY_ENV: Record<EvmChainId, string[]> = {
   ethereum: ["ETHERSCAN_API_KEY"],
   base: ["BASESCAN_API_KEY", "ETHERSCAN_API_KEY"],
   arbitrum: ["ARBISCAN_API_KEY", "ETHERSCAN_API_KEY"],
@@ -54,6 +54,7 @@ export interface FetchedSource {
 
 export class EtherscanClient {
   async fetchSource(address: string, chain: ChainId): Promise<FetchedSource | null> {
+    if (chain === "solana") return null; // Etherscan is EVM-only
     const apiKey = this.resolveApiKey(chain);
     if (!apiKey) return null;
 
@@ -121,7 +122,8 @@ export class EtherscanClient {
   }
 
   private resolveApiKey(chain: ChainId): string | undefined {
-    for (const envVar of API_KEY_ENV[chain]) {
+    if (chain === "solana") return undefined;
+    for (const envVar of API_KEY_ENV[chain as EvmChainId]) {
       const key = process.env[envVar];
       if (key && key.trim().length > 0) return key;
     }

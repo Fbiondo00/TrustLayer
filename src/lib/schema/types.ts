@@ -17,13 +17,19 @@ import type { ScoreExplanation } from "./explanation";
 
 export type InputType = "address" | "source" | "bytecode";
 
-export type ChainId = "ethereum" | "base" | "arbitrum" | "optimism";
+export type ChainId = "ethereum" | "base" | "arbitrum" | "optimism" | "solana";
+
+/** Subset of chains that run on the EVM — used to type EVM-only data structures
+ * (Etherscan chain IDs, viem chain map, ERC20 token catalogs) so adding
+ * `"solana"` to `ChainId` doesn't force them to have meaningless Solana entries. */
+export type EvmChainId = Exclude<ChainId, "solana">;
 
 export const CHAIN_IDS: readonly ChainId[] = [
   "ethereum",
   "base",
   "arbitrum",
   "optimism",
+  "solana",
 ] as const;
 
 export const CHAIN_LABEL: Record<ChainId, string> = {
@@ -31,7 +37,10 @@ export const CHAIN_LABEL: Record<ChainId, string> = {
   base: "BASE",
   arbitrum: "ARB",
   optimism: "OP",
+  solana: "SOL",
 };
+
+export const EVM_CHAINS: readonly EvmChainId[] = ["ethereum", "base", "arbitrum", "optimism"];
 
 export interface AnalysisInput {
   input_type: InputType;

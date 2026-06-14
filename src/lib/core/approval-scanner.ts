@@ -21,6 +21,7 @@ import {
 } from "@/lib/schema";
 import type {
   ChainId,
+  EvmChainId,
   AllowanceEntry,
   ApprovalRiskTier,
   ApprovalReport,
@@ -38,7 +39,7 @@ const CHAIN_VIEM = {
   optimism,
 } as const;
 
-const RPC_ENV: Record<ChainId, string> = {
+const RPC_ENV: Record<EvmChainId, string> = {
   ethereum: "ETH_RPC_URL",
   base: "BASE_RPC_URL",
   arbitrum: "ARBITRUM_RPC_URL",
@@ -46,13 +47,14 @@ const RPC_ENV: Record<ChainId, string> = {
 };
 
 export class ApprovalScanner {
-  private rpcOverrides: Partial<Record<ChainId, string>>;
+  private rpcOverrides: Partial<Record<EvmChainId, string>>;
 
-  constructor(rpcOverrides?: Partial<Record<ChainId, string>>) {
+  constructor(rpcOverrides?: Partial<Record<EvmChainId, string>>) {
     this.rpcOverrides = rpcOverrides ?? {};
   }
 
   isEnabled(chain: ChainId): boolean {
+    if (chain === "solana") return false;
     const url =
       this.rpcOverrides[chain] ??
       process.env[RPC_ENV[chain]] ??
@@ -61,22 +63,25 @@ export class ApprovalScanner {
   }
 
   async scan(address: string, chain: ChainId): Promise<ApprovalReport> {
+    if (chain === "solana") {
+      throw new Error("ApprovalScanner does not support Solana — use SolanaSplScanner");
+    }
     const url =
-      this.rpcOverrides[chain] ??
-      process.env[RPC_ENV[chain]] ??
+      this.rpcOverrides[chain as EvmChainId] ??
+      process.env[RPC_ENV[chain as EvmChainId]] ??
       process.env.ETH_RPC_URL;
     if (!url) {
       throw new Error(`ApprovalScanner disabled (no RPC for chain ${chain})`);
     }
 
     const client = createPublicClient({
-      chain: CHAIN_VIEM[chain],
+      chain: CHAIN_VIEM[chain as EvmChainId],
       transport: http(url),
     });
 
     const owner = getAddress(address);
-    const tokens = DEFAULT_TOKEN_LIST[chain];
-    const spenders = WHITELISTED_SPENDERS[chain];
+    const tokens = DEFAULT_TOKEN_LIST[chain as EvmChainId];
+    const spenders = WHITELISTED_SPENDERS[chain as EvmChainId];
 
     const calls = tokens.flatMap((token) =>
       spenders.map((spender) => ({
