@@ -9,6 +9,7 @@
 | [`PITCH.md`](./PITCH.md) | Pitch readers, judges | Problem, solution, market framing, verified targets |
 | [`DEMO.md`](./DEMO.md) | Demoers | 4-minute demo flow on `/scanner` with verified targets |
 | [`MAINNET-TESTS.md`](./MAINNET-TESTS.md) | Engineers, sponsors | USDC / WETH / LINK mainnet reproduction — env vars, expected output, failure modes |
+| [`CLI.md`](./CLI.md) | CLI users | `trustlayer analyze` / `replay` / `fix` — flags, env vars, examples |
 | [`SPONSORS.md`](./SPONSORS.md) | Sponsors | Per-sponsor alignment — what we use from each, what we'd love feedback on |
 | [`IMPLEMENTATION.md`](./IMPLEMENTATION.md) | Engineers | Phased build plan that produced this architecture |
 

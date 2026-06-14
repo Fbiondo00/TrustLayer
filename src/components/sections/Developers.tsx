@@ -14,7 +14,7 @@ const SURFACES = [
   {
     label: "MCP Server",
     title: "In-editor tool calls",
-    body: "Six tools for Claude Code, Cursor, Windsurf, or any MCP-aware client. Ask \"is agent 0x… safe?\" from your prompt and get the grade inline.",
+    body: "Seven tools for Claude Code, Cursor, Windsurf, or any MCP-aware client. Ask \"is agent 0x… safe?\" from your prompt and get the grade inline.",
     tools: [
       "trustlayer_analyze",
       "trustlayer_decompile",
@@ -22,13 +22,18 @@ const SURFACES = [
       "trustlayer_permissions",
       "trustlayer_approvals",
       "trustlayer_score",
+      "trustlayer_fix",
     ],
   },
   {
     label: "CLI",
     title: "Terminal + CI",
-    body: "Reproducible grades in any pipeline. Same engine, same scores — the agent surface for automation.",
-    tools: ["trustlayer analyze <input>", "trustlayer replay <id>"],
+    body: "Reproducible grades in any pipeline. Same engine, same scores — the agent surface for automation. Three commands cover live scans, instant replays, and LLM-driven patches.",
+    tools: [
+      "trustlayer analyze <input>",
+      "trustlayer replay <id>",
+      "trustlayer fix <source.sol>",
+    ],
   },
 ];
 
@@ -105,7 +110,7 @@ export function Developers() {
         <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Reveal>
             <div className="flex h-full flex-col rounded-2xl border border-border bg-surface/50 p-6">
-              <h3 className="text-base font-semibold text-fg">The six MCP tools</h3>
+              <h3 className="text-base font-semibold text-fg">The seven MCP tools</h3>
               <p className="mt-2 text-sm leading-relaxed text-fg-muted">
                 Each tool maps to one stage of the 8-step pipeline. Compose them in a chain or call
                 the umbrella tool for the full grade in one shot.
@@ -117,6 +122,7 @@ export function Developers() {
                 <Row name="trustlayer_permissions" desc="Map the 12 permission patterns (6 neg, 6 pos)." />
                 <Row name="trustlayer_approvals" desc="Scan ERC20 allowances for blast radius." />
                 <Row name="trustlayer_score" desc="Recompute the grade without re-running analysis." />
+                <Row name="trustlayer_fix" desc="LLM-patch a vulnerable contract (RAG-augmented)." />
               </dl>
             </div>
           </Reveal>
@@ -140,10 +146,13 @@ export function Developers() {
 
         <Reveal>
           <p className="mt-8 text-xs leading-relaxed text-fg-subtle">
-            The MCP server and CLI ship in a sibling orchestrator repository, kept private during
-            the judging window. Both consume the same <span className="font-mono">PipelineService</span>{" "}
-            documented in <span className="font-mono">docs/ARCHITECTURE.md</span> — the methodology
-            is public here; the binaries open-source after judging.
+            All three surfaces ship in this repo. Run the MCP server with{" "}
+            <span className="font-mono">pnpm trustlayer:mcp</span> (stdio), the CLI with{" "}
+            <span className="font-mono">pnpm trustlayer:cli &lt;command&gt;</span> — both consume
+            the same <span className="font-mono">PipelineService</span> documented in{" "}
+            <span className="font-mono">docs/ARCHITECTURE.md</span>. See{" "}
+            <span className="font-mono">docs/CLI.md</span> and{" "}
+            <span className="font-mono">.mcp.json.example</span> for the full reference.
           </p>
         </Reveal>
       </div>

@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "trustlayer": {
+      "command": "npx",
+      "args": ["tsx", "src/mcp/server.ts"],
+      "env": {
+        "ETHERSCAN_API_KEY": "<your-key>",
+        "DEDAUB_API_KEY": "<your-key>",
+        "ETH_RPC_URL": "<your-rpc-url>",
+        "OPENAI_API_KEY": "<optional-your-key>",
+        "ANALYSIS_MODEL": "gpt-4o-mini"
+      }
+    }
+  }
+}

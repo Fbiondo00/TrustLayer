@@ -22,11 +22,11 @@ Grade thresholds: A+ ≥97, A ≥93, A- ≥87, B+ ≥80, B ≥73, B- ≥65, C+ �
 
 | Surface | Available | Notes |
 |---|---|---|
-| **Web app** (this repo) | YES | `/scanner` → select "Deployed address" → paste → Scan |
-| **MCP server** (sibling repo) | YES | `trustlayer_analyze` tool — same engine, same scores |
-| **CLI** (sibling repo) | YES | `trustlayer analyze <address>` — same engine, same scores |
+| **Web app** | YES | `/scanner` → select "Deployed address" → paste → Scan |
+| **MCP server** | YES | `trustlayer_analyze` tool — same engine, same scores |
+| **CLI** | YES | `trustlayer analyze <address>` — same engine, same scores |
 
-The MCP server and CLI live in a sibling orchestrator repository, kept private during the judging window. Both consume the same `PipelineService` documented in [`ARCHITECTURE.md`](./ARCHITECTURE.md) — the methodology is public here; the binaries open-source after judging.
+All three surfaces live in this repo. The MCP server starts with `pnpm trustlayer:mcp` (stdio); the CLI runs with `pnpm trustlayer:cli <command>` (see [`CLI.md`](./CLI.md)). Both consume the same `PipelineService` documented in [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 ---
 
@@ -117,7 +117,7 @@ ETHERSCAN_API_KEY=... ETH_RPC_URL=... DEDAUB_API_KEY=... \
 
 ## Reproduction in MCP / CLI
 
-The sibling MCP server exposes the umbrella tool `trustlayer_analyze` with the same input shape:
+The MCP server exposes the umbrella tool `trustlayer_analyze` with the same input shape:
 
 ```json
 {
@@ -133,11 +133,11 @@ The sibling MCP server exposes the umbrella tool `trustlayer_analyze` with the s
 The CLI equivalent:
 
 ```bash
-trustlayer analyze 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
-trustlayer replay <analysis-id>
+pnpm trustlayer:cli analyze 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+pnpm trustlayer:cli replay usdc-token
 ```
 
-Both produce the same score because they import the same `PipelineService`. The MCP / CLI surfaces are not in this repo — see [Where they run](#where-they-run).
+Both produce the same score because they import the same `PipelineService`. See [`CLI.md`](./CLI.md) for the full command reference, or [`.mcp.json.example`](../.mcp.json.example) for MCP server config.
 
 ---
 
