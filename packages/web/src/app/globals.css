@@ -188,7 +188,7 @@ section[id] {
   font-weight: 600;
   transition: top 0.2s ease;
 }
-.skip-link:focus {
+.skip-link:focus-visible {
   top: 1rem;
 }
 
