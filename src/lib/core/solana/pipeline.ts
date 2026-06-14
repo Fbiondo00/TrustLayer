@@ -410,6 +410,25 @@ export class SolanaPipelineService {
       };
     }
 
+    // 0 token accounts is a clean result — the address isn't a SPL
+    // participant. This is the normal case when scanning a program address
+    // (Token Program, Wormhole, etc.) rather than a wallet.
+    if (tokenAccounts.length === 0) {
+      return {
+        score: 100,
+        findings: [
+          {
+            id: "sol-no-token-accounts",
+            severity: "informational",
+            title: "No SPL token accounts owned",
+            description:
+              "Address owns no token accounts in Token Program or Token-2022 — nothing to delegate, no delegate-drain risk.",
+            source: "system",
+          },
+        ],
+      };
+    }
+
     const findings: Finding[] = [];
     let delegated = 0;
     let unlimited = 0;

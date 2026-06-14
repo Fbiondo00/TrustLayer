@@ -119,13 +119,18 @@ export class SolanaRpcClient {
   /**
    * SPL Token accounts owned by `address`. Covers both Token program and
    * Token-2022 program — callers can post-filter by `account.owner` to split.
+   *
+   * Returns `[]` when the account owns no token accounts OR when the RPC
+   * returns -32010 ("excluded from secondary index" — common when scanning
+   * a program address rather than a wallet). Real RPC failures (timeouts,
+   * rate limits, server errors) still throw.
    */
   async getTokenAccountsByOwner(address: string): Promise<SolanaTokenAccount[]> {
     const calls = [
       { programId: TOKEN_PROGRAM_ID },
       { programId: TOKEN_2022_PROGRAM_ID },
     ];
-    const results = await Promise.all(
+    const settled = await Promise.allSettled(
       calls.map((cfg) =>
         this.call<{ value: SolanaTokenAccount[] }>("getTokenAccountsByOwner", [
           address,
@@ -134,6 +139,27 @@ export class SolanaRpcClient {
         ]),
       ),
     );
-    return results.flatMap((r) => r?.value ?? []);
+    const out: SolanaTokenAccount[] = [];
+    for (const s of settled) {
+      if (s.status === "fulfilled") {
+        out.push(...(s.value?.value ?? []));
+        continue;
+      }
+      // Rejection: distinguish "excluded from secondary index(es)" (account
+      // is not a SPL participant — treat as empty) from real RPC failure.
+      // Triton/Helius returns -32010 with a message like:
+      //   "<addr> excluded from account secondary indexes; this RPC method
+      //    unavailable for key. ..."
+      const msg = s.reason instanceof Error ? s.reason.message : String(s.reason);
+      if (
+        msg.includes("secondary index") ||
+        msg.includes("-32010") ||
+        msg.includes("RPC method unavailable for key")
+      ) {
+        continue;
+      }
+      throw s.reason;
+    }
+    return out;
   }
 }
