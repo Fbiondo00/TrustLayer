@@ -93,13 +93,20 @@ export class SolanaRpcClient {
 
   /**
    * Fetch account info. Returns null for non-existent accounts.
-   * Encoding "base58" gives a compact form suitable for parsing account types
-   * like the upgradeable loader's ProgramData account (≈ 180 bytes).
+   *
+   * Default encoding "base58" works for small accounts (program accounts,
+   * mint accounts, etc.). For large accounts like ProgramData — which holds
+   * the program bytecode and can be hundreds of KB — Solana RPC refuses
+   * base58 ("Encoded binary data should be less than 128 bytes"). Pass
+   * "base64" for those lookups.
    */
-  async getAccountInfo(address: string): Promise<SolanaAccountInfo | null> {
+  async getAccountInfo(
+    address: string,
+    encoding: "base58" | "base64" = "base58",
+  ): Promise<SolanaAccountInfo | null> {
     const result = await this.call<{ value: SolanaAccountInfo | null }>(
       "getAccountInfo",
-      [address, { encoding: "base58", commitment: "confirmed" }],
+      [address, { encoding, commitment: "confirmed" }],
     );
     return result?.value ?? null;
   }

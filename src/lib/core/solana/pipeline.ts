@@ -30,6 +30,7 @@ import type {
 } from "@/lib/schema";
 import { SOLANA_SCORE_WEIGHTS } from "@/lib/schema";
 import { scoreToGrade } from "@/lib/schema";
+import { PublicKey } from "@solana/web3.js";
 import { SolanaRpcClient } from "./rpc";
 
 const BPF_LOADER_UPGRADEABLE = "BPFLoaderUpgradeab1e11111111111111111111111";
@@ -232,32 +233,53 @@ export class SolanaPipelineService {
         source: "system",
       });
     } else if (upgradeable) {
-      // Fetch the ProgramData account to read the upgrade authority.
-      const programDataAddr = await this.findProgramDataAddress(address);
-      let upgradeAuthority: string | null = null;
-      if (programDataAddr) {
-        const pd = await this.rpc.getAccountInfo(programDataAddr);
-        upgradeAuthority = pd ? this.extractUpgradeAuthority(pd) : null;
-      }
-
-      if (upgradeAuthority) {
-        score -= 35;
+      // Derive the ProgramData PDA and fetch it to read the actual authority.
+      const programDataAddr = this.findProgramDataAddress(address);
+      if (!programDataAddr) {
+        // PDA derivation failed — can't determine state. Conservatively
+        // flag as indeterminate so the user knows not to trust the program.
+        score -= 10;
         findings.push({
-          id: "sol-upgrade-authority-set",
-          severity: "high",
-          title: "Upgrade authority is set — program is mutable",
-          description: `Upgrade authority: ${upgradeAuthority}. The program code can be replaced at any time by this signer. Check whether it's a multisig / Squads / timelocked.`,
+          id: "sol-authority-unknown",
+          severity: "medium",
+          title: "Couldn't derive ProgramData address",
+          description: "PDA derivation failed — upgrade authority state is indeterminate. Manual review required.",
           source: "system",
         });
       } else {
-        findings.push({
-          id: "sol-upgrade-authority-frozen",
-          severity: "informational",
-          title: "Upgrade authority frozen",
-          description: "Program data has no upgrade authority — code is effectively immutable.",
-          source: "system",
-        });
-        score += 0; // already at 100, no bonus
+        const pd = await this.rpc.getAccountInfo(programDataAddr, "base64");
+        if (!pd) {
+          // PD account exists in derivation but fetch returned null — either
+          // the program was never upgraded (rare) or RPC failed silently.
+          score -= 10;
+          findings.push({
+            id: "sol-authority-unknown",
+            severity: "medium",
+            title: "ProgramData account unavailable",
+            description: "Derived the PD address but RPC returned no account — upgrade authority state is indeterminate. Manual review required.",
+            source: "system",
+          });
+        } else {
+          const upgradeAuthority = this.extractUpgradeAuthority(pd);
+          if (upgradeAuthority) {
+            score -= 35;
+            findings.push({
+              id: "sol-upgrade-authority-set",
+              severity: "high",
+              title: "Upgrade authority is set — program is mutable",
+              description: `Upgrade authority: ${upgradeAuthority}. The program code can be replaced at any time by this signer. Check whether it's a multisig / Squads / timelocked.`,
+              source: "system",
+            });
+          } else {
+            findings.push({
+              id: "sol-upgrade-authority-frozen",
+              severity: "informational",
+              title: "Upgrade authority frozen",
+              description: "Program data has no upgrade authority — code is effectively immutable.",
+              source: "system",
+            });
+          }
+        }
       }
     } else if (isSystem) {
       findings.push({
@@ -515,6 +537,8 @@ export class SolanaPipelineService {
       lines.push(`⚠️ Program is upgradeable with active authority — code can be replaced on-chain by the upgrade signer.`);
     } else if (has("sol-upgrade-authority-frozen")) {
       lines.push(`✅ Program loaded via upgradeable loader but authority is renounced — effectively immutable.`);
+    } else if (has("sol-authority-unknown")) {
+      lines.push(`⚠️ Couldn't determine upgrade authority — manual review needed.`);
     } else if (has("sol-immutable-program")) {
       lines.push(`✅ Program is immutable — code is fixed on-chain.`);
     } else if (has("sol-wallet-not-program")) {
@@ -551,23 +575,54 @@ export class SolanaPipelineService {
 
   /**
    * Derive the ProgramData address for an upgradeable program. The PD address
-   * is a PDA derived from [program_address, "UpgradeableLoader"] seeds against
-   * the BPF Upgradeable Loader. Without a real PDA client this is approximate;
-   * we use the well-known deterministic derivation via `findProgramAddress`.
-   * For now, returns null and the caller falls back to "assume upgradeable".
+   * is a PDA derived from [program_address] seeds against the BPF Upgradeable
+   * Loader. Solana's findProgramAddressSync bumps a seed from 255 down to find
+   * the first off-curve hash — deterministic and constant-time.
    */
-  private async findProgramDataAddress(_programAddr: string): Promise<string | null> {
-    // Stubbed until we add @solana/web3.js or implement PDA derivation locally.
-    // Returning null means we conservatively flag "upgradeable with unknown authority"
-    // rather than "frozen" — safe default.
-    return null;
+  private findProgramDataAddress(programAddr: string): string | null {
+    try {
+      const program = new PublicKey(programAddr);
+      const loader = new PublicKey(BPF_LOADER_UPGRADEABLE);
+      const [pda] = PublicKey.findProgramAddressSync(
+        [program.toBuffer()],
+        loader,
+      );
+      return pda.toBase58();
+    } catch {
+      return null;
+    }
   }
 
-  private extractUpgradeAuthority(_programData: { data: [string, string] }): string | null {
-    // Real implementation would base58-decode, skip the 4-byte account-type tag
-    // and 8-byte slot, then read the next 32 bytes as the Option<Pubkey>.
-    // Returning null = treat as frozen (safer if we can't parse).
-    return null;
+  /**
+   * Parse the ProgramData account to extract the upgrade authority.
+   *
+   * Layout (BPF Upgradeable Loader spec):
+   *   bytes 0–3:   account-type tag (u32 LE) — value 3 = ProgramData
+   *   bytes 4–11:  slot (u64 LE) — last upgrade slot
+   *   byte 12:     Option tag (0 = None / renounced, 1 = Some)
+   *   bytes 13–44: upgrade authority pubkey (only present if Option = 1)
+   *
+   * Returns null when the authority is explicitly renounced (Option::None),
+   * when the account is malformed, or when the tag doesn't match ProgramData.
+   * Caller distinguishes "renounced" from "couldn't parse" by checking
+   * whether the fetch itself succeeded.
+   *
+   * Supports both base58 and base64 encodings — base64 is mandatory for
+   * ProgramData because Solana RPC refuses base58 payloads > 128 bytes.
+   */
+  private extractUpgradeAuthority(pd: { data: [string, string] }): string | null {
+    const [payload, encoding] = pd.data;
+    const raw =
+      encoding === "base64"
+        ? new Uint8Array(Buffer.from(payload, "base64"))
+        : this.decodeBase58(payload);
+    if (raw.length < 13) return null;
+    // account_type tag — value 3 means ProgramData (little-endian u32)
+    if (raw[0] !== 3 || raw[1] !== 0 || raw[2] !== 0 || raw[3] !== 0) return null;
+    const optionTag = raw[12];
+    if (optionTag === 0) return null; // explicit Option::None = renounced
+    if (raw.length < 45) return null; // malformed Some payload
+    return new PublicKey(raw.slice(13, 45)).toBase58();
   }
 
   private decodeBase58(input: string): Uint8Array {
