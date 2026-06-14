@@ -93,7 +93,7 @@ export function Hero() {
             className="pointer-events-auto mt-9 flex flex-wrap items-center gap-3"
           >
             <a
-              href="#scanner"
+              href="/scanner"
               className="group relative inline-flex items-center gap-2 rounded-full bg-brand px-6 py-3.5 text-sm font-semibold text-bg shadow-[0_0_60px_-12px_rgba(167,139,250,0.65),0_8px_24px_-12px_rgba(167,139,250,0.5)] transition-all hover:bg-brand-strong hover:shadow-[0_0_80px_-10px_rgba(167,139,250,0.9),0_10px_30px_-12px_rgba(167,139,250,0.6)]"
             >
               Scan an agent
