@@ -113,8 +113,7 @@ The CLI reads the same env vars as the web app, auto-loaded from `.env` in the w
 | `OPENAI_BASE_URL` | Optional OpenAI-compatible endpoint override |
 | `REDHAT_API_URL` + `REDHAT_API_KEY` | Red Hat / AssistAI LLM gateway (overrides OpenAI) |
 | `ANALYSIS_MODEL` | Override LLM model id |
-| `USE_BEEAI` | `true` to use BeeAI ReAct agent (optional, dynamic-imported) |
-| `AGENT_MODEL` | Override BeeAI model (default `ollama:granite3.3:8b`) |
+| `FIX_MODEL` | Override LLM model id for the `fix` command |
 
 Slither must be on the host for B+ or higher grades:
 

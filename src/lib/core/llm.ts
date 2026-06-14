@@ -1,14 +1,11 @@
 /**
- * LLM client — OpenAI-compatible chat with optional BeeAI agent + RAG context.
+ * LLM client — OpenAI-compatible chat with RAG context.
  *
- * Three layers, in priority order:
- * 1. **BeeAI ReActAgent** (optional) — used when `USE_BEEAI=true`. Falls back
- *    to the OpenAI SDK call on failure. Reads `AGENT_MODEL` (default
- *    `ollama:granite3.3:8b`).
- * 2. **OpenAI SDK** (primary) — works against AssistAI/Langfuse, Ollama,
+ * Two layers:
+ * 1. **OpenAI SDK** (primary) — works against AssistAI/Langfuse, Ollama,
  *    OpenAI itself, or the Red Hat gateway. Langfuse combined-key splitting
  *    handled here.
- * 3. **RAG context** — every analysis call pulls relevant SWC patterns via
+ * 2. **RAG context** — every analysis call pulls relevant SWC patterns via
  *    `RAGService.buildSemanticContext()`. Wrapped in try/catch so a RAG
  *    failure never kills the analysis.
  *
@@ -38,7 +35,6 @@ export class LLMClient {
   private readonly apiKey: string;
   private readonly baseURL: string;
   private readonly publicKey: string;
-  private readonly useBeeAI: boolean;
 
   constructor() {
     this.baseURL =
@@ -85,9 +81,6 @@ export class LLMClient {
     this.fixModel =
       process.env.FIX_MODEL ||
       (process.env.REDHAT_API_URL ? "gemma-4-E4B" : "gemma4-coder");
-
-    // Disable BeeAI by default — only enabled when USE_BEEAI=true.
-    this.useBeeAI = process.env.USE_BEEAI === "true";
   }
 
   isEnabled(): boolean {
@@ -97,8 +90,6 @@ export class LLMClient {
   /**
    * Analyze a smart contract for vulnerabilities.
    * Returns Markdown text explaining each finding.
-   *
-   * Tries BeeAI agent first (if enabled), falls back to OpenAI SDK call.
    */
   async analyzeContract(
     source: string,
@@ -124,22 +115,12 @@ export class LLMClient {
       // RAG failed — continue without context.
     }
 
-    if (this.useBeeAI) {
-      try {
-        return await this.analyzeWithBeeAI(source, findings, ragContext);
-      } catch (err) {
-        console.warn("BeeAI agent failed, falling back to OpenAI SDK:", err);
-      }
-    }
-
     return this.analyzeWithOpenAI(source, findings, ragContext);
   }
 
   /**
    * Generate a fix for a specific vulnerability.
    * Returns the patched Solidity source (no markdown fences).
-   *
-   * Tries BeeAI agent first (if enabled), falls back to OpenAI SDK call.
    */
   async generateFix(
     source: string,
@@ -150,18 +131,8 @@ export class LLMClient {
       throw new Error("LLMClient is disabled (OPENAI_API_KEY not set)");
     }
 
-    if (this.useBeeAI) {
-      try {
-        return await this.fixWithBeeAI(source, vulnerability, patterns);
-      } catch (err) {
-        console.warn("BeeAI fix failed, falling back to OpenAI SDK:", err);
-      }
-    }
-
     return this.fixWithOpenAI(source, vulnerability, patterns);
   }
-
-  // ─── OpenAI SDK Implementation ─────────────────────────────
 
   private async analyzeWithOpenAI(
     source: string,
@@ -227,116 +198,5 @@ ${patterns ? `\n## Reference fix patterns:\n${patterns}` : ""}`;
       throw new Error("LLM returned empty response");
     }
     return content;
-  }
-
-  // ─── BeeAI Agent Implementation ────────────────────────────
-
-  private async analyzeWithBeeAI(
-    source: string,
-    findings: SlitherFindingLike[],
-    ragContext: string,
-  ): Promise<string> {
-    // Dynamic imports — beeai-framework is an optional peer dep.
-    // @ts-ignore — subpath exports not visible to TS but resolved at runtime
-    const { ReActAgent } = await import("beeai-framework/agents/react/agent");
-    // @ts-ignore
-    const { UnconstrainedMemory } = await import(
-      "beeai-framework/memory/unconstrainedMemory"
-    );
-    // @ts-ignore
-    const { ChatModel } = await import("beeai-framework/backend/chat");
-
-    const modelName = process.env.AGENT_MODEL || "ollama:granite3.3:8b";
-
-    // @ts-ignore — modelName is a valid BeeAI model identifier
-    const llm = await ChatModel.fromName(modelName);
-
-    const findingsSummary = findings
-      .map((f) => `- [${(f.severity ?? "").toUpperCase()}] ${f.check}: ${f.description}`)
-      .join("\n");
-
-    const userPrompt = `You are TrustLayer's AI Security Analyst. Your role is to analyze smart contract vulnerabilities found by automated tools and explain them clearly to users.
-
-Key principles:
-- You are a TRANSLATOR, not an oracle — explain what the mechanical tools found, don't invent issues
-- Be concise and technical but accessible
-- Always reference specific code sections
-- Assess real-world impact (funds at risk, attack scenario)
-- Never hallucinate vulnerabilities not supported by the findings
-
-## Smart Contract Source Code
-\`\`\`solidity
-${source.slice(0, 8000)}
-\`\`\`
-
-${source.length > 8000 ? "\n[Source code truncated for analysis]\n" : ""}
-
-## Vulnerability Findings
-${findingsSummary}
-
-${ragContext ? `## Security Knowledge Base (RAG Context)\n${ragContext}` : ""}
-
----
-
-Analyze each vulnerability found. For each:
-1. **What** — Explain the attack vector in simple terms
-2. **Why** — Why the code is vulnerable (reference specific lines)
-3. **Impact** — Real-world consequences (funds at risk, etc.)
-4. **Severity Assessment** — Do you agree with the tool's severity rating?
-
-Be concise. This is for a trust score report.`;
-
-    const agent = new ReActAgent({
-      llm,
-      memory: new UnconstrainedMemory(),
-      tools: [],
-    });
-
-    const response = await agent.run({ prompt: userPrompt });
-    return response.result.text;
-  }
-
-  private async fixWithBeeAI(
-    source: string,
-    vulnerability: string,
-    patterns: string,
-  ): Promise<string> {
-    // @ts-ignore
-    const { ReActAgent } = await import("beeai-framework/agents/react/agent");
-    // @ts-ignore
-    const { UnconstrainedMemory } = await import(
-      "beeai-framework/memory/unconstrainedMemory"
-    );
-    // @ts-ignore
-    const { ChatModel } = await import("beeai-framework/backend/chat");
-
-    const modelName = process.env.FIX_MODEL || "ollama:granite3.3:8b";
-
-    // @ts-ignore — modelName is a valid BeeAI model identifier
-    const llm = await ChatModel.fromName(modelName);
-
-    const userPrompt = `## Vulnerable Code
-\`\`\`solidity
-${source.slice(0, 8000)}
-\`\`\`
-
-## Vulnerability to fix: ${vulnerability}
-
-${patterns ? `## Reference fix patterns:\n${patterns}` : ""}
-
-Output the FIXED Solidity code only. No explanations. No markdown fences.`;
-
-    const agent = new ReActAgent({
-      llm,
-      memory: new UnconstrainedMemory(),
-      tools: [],
-    });
-
-    const response = await agent.run({ prompt: userPrompt });
-    const text = response.result.text;
-
-    // Try to extract code from markdown fences.
-    const match = text.match(/```solidity\n([\s\S]*?)```/);
-    return match ? match[1]!.trim() : text.trim();
   }
 }

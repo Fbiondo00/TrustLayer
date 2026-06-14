@@ -38,6 +38,12 @@ const TRUSTLAYER_CREDITS_ABI = [
   },
 ] as const;
 
+/**
+ * Future API — not currently invoked by web/MCP/CLI surfaces. The web `/scanner`
+ * stays free; PaymentGate is wired here so the $TRUST tokenomics roadmap can
+ * flip it on by setting `PAYMENT_CONTRACT_ADDRESS` + `PAYMENT_SIGNER_PRIVATE_KEY`
+ * + `DEMO_MODE=false` without touching call sites.
+ */
 export class PaymentGate implements PaymentGateInterface {
   private rpcUrl: string;
   private contractAddress: Hex;

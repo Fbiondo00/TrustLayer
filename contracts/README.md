@@ -123,8 +123,10 @@ Handles the credit lifecycle: **buy → hold → consume per scan**.
 ## Quick Start
 
 ```bash
-# Install dependencies (already done if lib/ exists)
-forge install
+# Install dependencies — lib/ is gitignored, so re-install on fresh clone.
+# `forge install` with no args won't pull these — list them explicitly.
+forge install foundry-rs/forge-std
+forge install OpenZeppelin/openzeppelin-contracts
 
 # Build
 forge build

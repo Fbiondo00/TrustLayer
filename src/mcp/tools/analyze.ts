@@ -3,8 +3,10 @@
  *
  * Input shape adapted from NapulETH (single `input_data` string) to
  * TrustLayer's `AnalysisInput` (separate `address?` / `source?` / `bytecode?`
- * fields, discriminated on `input_type`). The MCP SDK requires a flat Zod
- * object, so the discriminated union is unrolled here.
+ * fields, discriminated on `input_type`). The MCP SDK takes a flat ZodRawShape
+ * (not a discriminated union), so the inline schema is the SDK-facing shape;
+ * we then re-parse through `AnalyzeInputSchema` to narrow to the typed union
+ * the pipeline expects.
  *
  * Event consumption also differs: TrustLayer's `PipelineEvent` is flat
  * (`{step, step_id, status, ...}`) — the terminal event carries `result`.
@@ -12,7 +14,7 @@
 
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { chainEnum, PIPELINE_STEPS } from "@/lib/schema";
+import { AnalyzeInputSchema, chainEnum, PIPELINE_STEPS } from "@/lib/schema";
 import { PipelineService } from "@/lib/core";
 
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
@@ -46,7 +48,10 @@ export function registerAnalyzeTool(server: McpServer) {
         .optional()
         .describe("Optional human-friendly label for the scan"),
     },
-    async ({ input_type, chain, source, bytecode, address }) => {
+    async (args) => {
+      // Narrow the flat MCP args to the typed AnalysisInput union.
+      // Throws ZodError if the required field for the variant is missing.
+      const input = AnalyzeInputSchema.parse(args);
       const pipeline = new PipelineService();
       const events: Array<{
         step: number;
@@ -59,13 +64,7 @@ export function registerAnalyzeTool(server: McpServer) {
       }> = [];
       let result = null;
 
-      for await (const event of pipeline.runAnalysis({
-        input_type,
-        chain,
-        source,
-        bytecode,
-        address,
-      } as never)) {
+      for await (const event of pipeline.runAnalysis(input)) {
         if (event.step === 0 && event.status === "done") {
           result = event.result ?? null;
         } else {
