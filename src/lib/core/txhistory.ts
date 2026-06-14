@@ -98,7 +98,11 @@ export class TXHistoryAnalyzer {
   private detectAnomalies(metrics: TXMetrics, txs: EtherscanTX[]): AnomalyFlag[] {
     const flags: AnomalyFlag[] = [];
 
-    if (metrics.days_active <= ANOMALY_THRESHOLDS.recently_created_days && metrics.days_active > 0) {
+    if (
+      metrics.days_active <= ANOMALY_THRESHOLDS.recently_created_days &&
+      metrics.days_active > 0 &&
+      metrics.total_transactions < ANOMALY_THRESHOLDS.established_activity_threshold
+    ) {
       flags.push("recently_created");
     }
     if (metrics.success_rate < 1 - ANOMALY_THRESHOLDS.high_failure_rate) {

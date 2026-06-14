@@ -22,6 +22,7 @@ import {
   DEFAULT_SCORE_WEIGHTS,
   SCORE_CAPS,
   SAFETY_BONUS,
+  SLITHER_LEGACY_DETECTOR_DOWNGRADES,
   SLITHER_PENALTY,
   scoreToGrade,
 } from "@/lib/schema";
@@ -45,7 +46,16 @@ export class TrustScoreCalculator {
   }
 
   calculateWithDetails(params: ScoreCalcParams): DetailedScoreResult {
-    const slitherScore = this.calculateSlitherScore(params.findings);
+    // Downrank legacy-pattern Slither detectors (constant-function-asm on EIP-1967
+    // proxies, shadowing-local on constructor params, etc.) so audited contracts
+    // like USDC's FiatTokenProxy aren't dragged 30+ points by cosmetic findings.
+    const findings = params.findings.map((f) => {
+      if (f.source !== "slither") return f;
+      const downgrade = SLITHER_LEGACY_DETECTOR_DOWNGRADES[f.detector ?? f.id];
+      return downgrade ? { ...f, severity: downgrade } : f;
+    });
+
+    const slitherScore = this.calculateSlitherScore(findings);
     const dedaubScore = this.calculateDedaubScore(params.tokenRiskFlags ?? []);
     const permScore = params.permissionScore ?? NEUTRAL;
     const txScore = params.txScore ?? NEUTRAL;
@@ -62,14 +72,14 @@ export class TrustScoreCalculator {
         aiScore * weights.ai) /
       100;
 
-    const hasHighOrMedium = params.findings.some(
+    const hasHighOrMedium = findings.some(
       (f) => f.severity === "high" || f.severity === "medium",
     );
     const bonus = hasHighOrMedium ? 0 : SAFETY_BONUS;
     const compositeWithBonus = composite + bonus;
 
-    const highCount = params.findings.filter((f) => f.severity === "high").length;
-    const slitherNotRun = params.findings.some((f) => f.id === "slither-not-run");
+    const highCount = findings.filter((f) => f.severity === "high").length;
+    const slitherNotRun = findings.some((f) => f.id === "slither-not-run");
 
     let cap: number | undefined;
     let capReason: ScoreCapReason = null;

@@ -35,6 +35,13 @@ export interface TXMetrics {
 export const ANOMALY_THRESHOLDS = {
   /** Contract age below this many days triggers recently_created. */
   recently_created_days: 7,
+  /**
+   * Contracts with this many or more observed transactions are treated as
+   * established — recently_created is skipped because Etherscan only returns
+   * the latest 10k txs, which on a high-throughput contract (USDC, WETH)
+   * can span less than a day even though the contract is years old.
+   */
+  established_activity_threshold: 1000,
   /** Failure rate above this triggers high_failure_rate. */
   high_failure_rate: 0.3,
   /** Total transactions below this triggers no_activity. */

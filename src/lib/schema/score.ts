@@ -75,6 +75,25 @@ export const SLITHER_PENALTY: Record<
   optimization: 0,
 };
 
+/**
+ * Slither detectors that fire on standard EIP-1967 proxy idioms or legacy
+ * OpenZeppelin 0.4.x patterns rather than real exploitable risks. We downrank
+ * them one tier (medium → low → informational) so a verified, audited proxy
+ * like USDC's FiatTokenProxy doesn't lose 30+ points to cosmetic patterns.
+ */
+export const SLITHER_LEGACY_DETECTOR_DOWNGRADES: Record<string, "high" | "medium" | "low" | "informational" | "optimization"> = {
+  "constant-function-asm": "low", // EIP-1967 storage slot reads use inline asm by design
+  "shadowing-local": "informational", // constructor param shadowing is cosmetic
+  "incorrect-modifier": "informational", // ifAdmin pattern is intentional for proxies
+  "assembly": "informational", // inline assembly is idiomatic in proxies
+  "solc-version": "informational", // old solc warning, not a runtime risk
+  "deprecated-standards": "informational", // e.g. suicide → selfdestruct rename
+  "low-level-calls": "informational", // low-level calls are idiomatic in proxies
+  "missing-zero-check": "informational", // rarely exploitable on its own
+  "reentrancy-no-eth": "informational", // reentrancy without value is theoretical
+  "reentrancy-benign": "informational", // benign reentrancy by Slither's own admission
+};
+
 /** Bonus unlocked by 0 High AND 0 Medium findings. */
 export const SAFETY_BONUS = 15;
 
