@@ -106,7 +106,12 @@ export function ScorePanel({ score, metadata }: Props) {
             </span>
           </div>
           <ul className="space-y-2">
-            {Object.entries(score.layer_scores).map(([layer, value]) => {
+            {Object.entries(score.layer_scores)
+              .filter(
+                ([layer]) =>
+                  (score.weights[layer as keyof typeof score.weights] ?? 0) > 0,
+              )
+              .map(([layer, value]) => {
               const weight = score.weights[layer as keyof typeof score.weights] ?? 0;
               const contribution = Math.round(((value as number) * weight) / 100);
               return (

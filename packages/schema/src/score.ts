@@ -149,13 +149,20 @@ export const DEFAULT_SCORE_WEIGHTS: Record<ScoreLayerId, number> = SCORE_LAYERS.
  * Solana layer weights. Different from EVM because Slither/Dedaub don't exist
  * for Solana — risk lives in the authority structure (upgradeable authority,
  * mint/freeze authority) and on-chain behavior instead.
+ *
+ * verification + ai are zeroed because their implementations are stubbed
+ * (verification returns a hardcoded neutral 50; ai returns templated text
+ * derived from findings, no independent signal). Weighting them would pin
+ * 25% of the composite to neutral and dilute borderline scores. Re-enable
+ * with non-zero weights when each layer is actually wired — verification
+ * needs the Solana FM source-verification hook; ai needs real LLM analysis.
  */
 export const SOLANA_SCORE_WEIGHTS: Record<ScoreLayerId, number> = {
-  authority: 30,
-  verification: 15,
-  txHistory: 25,
-  approvals: 20,
-  ai: 10,
+  authority: 40,
+  verification: 0,
+  txHistory: 35,
+  approvals: 25,
+  ai: 0,
   // EVM layers unused on Solana
   slither: 0,
   dedaub: 0,
