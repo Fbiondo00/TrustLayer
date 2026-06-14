@@ -253,6 +253,15 @@ export class PipelineService {
       yield* this.skipStep(8, "OPENAI_API_KEY not set");
     }
 
+    // ── Fold permission / approval / token findings into the master list ──
+    // MUST happen before scoring so the cap (which counts high-severity findings)
+    // sees findings from every layer, not just Slither. Without this, a honeypot
+    // (Dedaub high flags) or a wallet-draining permission pattern on a Slither-clean
+    // contract would never trigger the cap.
+    if (permissions) findings = [...findings, ...permissions.matched];
+    if (approvals) findings = [...findings, ...approvals.findings];
+    if (tokenRisk) findings = [...findings, ...tokenRiskFindings(tokenRisk)];
+
     // ── Compute trust score ────────────────────────────────────────────
     const detailedScore = this.scoreCalculator.calculateWithDetails({
       findings,
@@ -275,11 +284,6 @@ export class PipelineService {
       tokenRiskFlags: tokenRisk?.flags ?? [],
       aiAnalysis,
     });
-
-    // ── Fold permission / approval / token findings into the master list
-    if (permissions) findings = [...findings, ...permissions.matched];
-    if (approvals) findings = [...findings, ...approvals.findings];
-    if (tokenRisk) findings = [...findings, ...tokenRiskFindings(tokenRisk)];
 
     // ── Build layers_run / layers_skipped from the events ──────────────
     // (the events themselves carry the status; we infer here from outputs)

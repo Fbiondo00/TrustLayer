@@ -79,7 +79,7 @@ export const NEGATIVE_PERMISSIONS: readonly PermissionPattern[] = [
   {
     id: "reentrancy_exposed",
     delta: -15,
-    pattern: "function\\s+\\w+[^)]*\\)\\s*(?:payable|external|public)\\s*(?!.*nonReentrant)(?!.*ReentrancyGuard)(?!.*_locked)[^{]*\\{[^}]*(?:\\.transfer\\s*\\(|\\.send\\s*\\(|\\.call\\s*\\{)",
+    pattern: "function\\s+\\w+[^)]*\\)\\s*(?:payable|external|public)\\s*(?![^{]*nonReentrant)(?![^{]*ReentrancyGuard)(?![^{]*_locked)[^{]*\\{[^}]*(?:\\.transfer\\s*\\(|\\.send\\s*\\(|\\.call\\s*\\{)",
     severity: "medium",
     title: "Reentrancy exposure",
     description: "External call with value transfer without a reentrancy guard.",
