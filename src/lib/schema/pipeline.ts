@@ -31,7 +31,7 @@ export const PIPELINE_STEPS: readonly PipelineStepMeta[] = [
   { step: 2, id: "decompile", name: "Decompile", weight: 0, blurb: "Recover Solidity when source isn't verified.", tool: "Dedaub", phase: "setup", is_setup: true },
   { step: 3, id: "slither", name: "Slither scan", weight: 30, blurb: "~90 static vulnerability detectors.", tool: "Trail of Bits", phase: "scan", is_setup: false },
   { step: 4, id: "token", name: "Token risk", weight: 20, blurb: "30+ risk flags from on-chain metadata.", tool: "Dedaub TokIn", phase: "scan", is_setup: false },
-  { step: 5, id: "permissions", name: "Permission map", weight: 20, blurb: "9 patterns — 5 negative, 4 positive.", tool: "Heuristics", phase: "analyze", is_setup: false },
+  { step: 5, id: "permissions", name: "Permission map", weight: 20, blurb: "12 patterns — 6 negative, 6 positive.", tool: "Heuristics", phase: "analyze", is_setup: false },
   { step: 6, id: "history", name: "TX history", weight: 10, blurb: "Anomaly detection on past calls.", tool: "Etherscan V2", phase: "analyze", is_setup: false },
   { step: 7, id: "approvals", name: "Wallet approvals", weight: 15, blurb: "ERC20 allowance blast radius.", tool: "multicall3", phase: "analyze", is_setup: false },
   { step: 8, id: "ai", name: "AI intent", weight: 5, blurb: "Translates findings into plain English.", tool: "Gemma 4", phase: "explain", is_setup: false },

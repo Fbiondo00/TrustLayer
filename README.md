@@ -32,15 +32,15 @@ This repo is the **web client** of the TrustLayer orchestrator. The two sibling 
        └─────────────┘   └──────────────┘   └──────────────┘
 ```
 
-**Golden rule:** No security logic in the client surfaces. Everything — Slither invocation, Dedaub API calls, permission regex, scoring, cap logic — lives in `@trustlayer/core` (or, in this repo until the npm package lands, in `src/lib/core/` shaped to match the canonical orchestrator).
+**Golden rule:** No security logic in the client surfaces. Everything — Slither invocation, Dedaub API calls, permission regex, scoring, cap logic — lives in `src/lib/core/` (the canonical orchestrator surface, shaped to match the npm package once it lands).
 
 ### The 8-step pipeline
 
 1. **Fetch Contract** — bytecode from chain via Etherscan V2 (if address input)
 2. **Decompile** — Dedaub Decompiler API (if source not verified)
 3. **Vulnerability Scan** — Slither with ~90 detectors
-4. **Token Risk** — Dedaub TokIn API (30+ risk flags)
-5. **Permission Mapping** — regex-based dangerous-capability scan
+4. **Token Risk** — Dedaub TokIn API (12 canonical risk flags)
+5. **Permission Mapping** — 12 regex patterns (6 negative, 6 positive)
 6. **Transaction History** — Etherscan V2 anomaly detection
 7. **Wallet Approvals** — viem multicall3 scan of ERC20 allowances (the blast-radius layer)
 8. **AI Intent Analysis** — Gemma 4 via AssistAI gateway explains findings (LLM-agnostic)
@@ -60,13 +60,21 @@ This repo is the **web client** of the TrustLayer orchestrator. The two sibling 
 
 ### Verified targets
 
-| Input | Score | Grade |
-|---|---|---|
-| MaliciousAgent.sol (local demo) | 20/100 | F |
-| SafeAgent.sol (local demo) | 97/100 | A+ |
-| USDC mainnet | 83/100 | B+ |
-| WETH mainnet | 100/100 | A+ |
-| LINK mainnet | 90/100 | A- |
+The scanner reproduces these grades deterministically — the demo fixtures don't need any env keys:
+
+| Input | Score | Grade | Notes |
+|---|---|---|---|
+| `MaliciousAgent.sol` (demo) | 20/100 | F | 4 High findings → cap-20 |
+| `SafeAgent.sol` (demo) | 97/100 | A+ | 0 H + 0 M → +15 safety bonus |
+| USDC mainnet `0xA0b8…eB48` | 83/100 | B+ | 3 Medium `constant-function-asm` |
+| WETH mainnet `0xC02a…6Cc2` | 100/100 | A+ | clean run |
+| LINK mainnet `0x5149…86CA` | 90/100 | A- | 1 Medium `shadowing-abstract` |
+
+Reproduce the demo fixtures from the scanner page (`/scanner` → "Try MaliciousAgent" / "Try SafeAgent") or programmatically:
+
+```bash
+pnpm tsx src/lib/core/__fixtures__/demo-verify.ts
+```
 
 See [`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) for the full phased implementation plan.
 
@@ -78,7 +86,7 @@ See [`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) for the full phased imp
 - **UI** React 19 + TypeScript 5 + Tailwind CSS v4
 - **3D** React Three Fiber + three.js (hero scene)
 - **Motion** Framer Motion (entrance / interaction)
-- **Pipeline** (planned) viem, OpenAI SDK, Slither (Python subprocess), Dedaub API
+- **Pipeline** viem, OpenAI SDK, Slither (Python subprocess), Dedaub API
 
 ## Develop
 
@@ -87,7 +95,7 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). The scanner lives at [/scanner](http://localhost:3000/scanner).
 
 ### Environment
 
@@ -104,7 +112,27 @@ Without env vars the landing renders and `/scanner` runs in demo mode against pa
 | `REDHAT_API_URL` / `REDHAT_API_KEY` | Red Hat / AssistAI gateway for LLM (overrides OpenAI vars) |
 | `ANALYSIS_MODEL` / `FIX_MODEL` | Override the LLM models used for analysis and code fixes |
 
-Slither requires Python on the host: `pip3 install --user slither-analyzer solc-select`.
+Slither requires Python on the host:
+
+```bash
+pip3 install --user slither-analyzer solc-select
+solc-select install 0.8.20 && solc-select use 0.8.20
+```
+
+### Demo flow (no env keys needed)
+
+```bash
+pnpm dev
+# open http://localhost:3000/scanner
+# click "Try MaliciousAgent" → F 20/100
+# click "Try SafeAgent"      → A+ 97/100
+```
+
+### Deploy notes
+
+**Vercel / Netlify / serverless:** the demo path works out of the box — it only uses in-process mechanical analysis (permissions, scoring, explanation). The full pipeline needs Slither and Python on the host, which serverless platforms don't ship. To run Slither in production, deploy on a container runtime (Fly.io, Railway, a Docker host) and install Slither + solc-select in the image.
+
+The `/scanner` route degrades gracefully without env keys — every external service reports `isEnabled() === false`, the pipeline emits an informational `slither-not-run` finding, and the grade caps at B+ (80 max). The demo fixtures (MaliciousAgent F20, SafeAgent A+97) still reproduce exactly because their grades are driven by the permission layer alone.
 
 ## License
 

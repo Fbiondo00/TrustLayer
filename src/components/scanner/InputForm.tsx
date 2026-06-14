@@ -71,7 +71,11 @@ export function InputForm() {
                   />
                   <span>
                     <span className="block text-sm font-medium text-fg">{opt.label}</span>
-                    <span className="block font-mono text-[11px] text-fg-subtle">
+                    <span
+                      className={`block font-mono text-[11px] ${
+                        active ? "text-fg-muted" : "text-fg-subtle"
+                      }`}
+                    >
                       {opt.hint}
                     </span>
                   </span>

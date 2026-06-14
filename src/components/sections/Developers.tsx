@@ -6,7 +6,7 @@ const TOOLS = [
   { name: "trustlayer_analyze", blurb: "Run the full 8-step pipeline on an agent contract." },
   { name: "trustlayer_decompile", blurb: "Recover Solidity from bytecode via Dedaub." },
   { name: "trustlayer_token_risk", blurb: "30+ TokIn risk flags on any token address." },
-  { name: "trustlayer_permissions", blurb: "Map the 9 permission patterns (5 neg, 4 pos)." },
+  { name: "trustlayer_permissions", blurb: "Map the 12 permission patterns (6 neg, 6 pos)." },
   { name: "trustlayer_approvals", blurb: "Scan ERC20 allowances for blast radius." },
   { name: "trustlayer_score", blurb: "Recompute the grade without re-running analysis." },
 ];
