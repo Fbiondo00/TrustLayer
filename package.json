@@ -21,6 +21,10 @@
       "esbuild",
       "sharp",
       "unrs-resolver"
+    ],
+    "ignoredBuiltDependencies": [
+      "bufferutil",
+      "utf-8-validate"
     ]
   }
 }
