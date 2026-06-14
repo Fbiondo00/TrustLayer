@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { analyze, type AnalysisState } from "@/app/actions/analyze";
 import type { ChainId, InputType } from "@/lib/schema";
 import { CHAIN_IDS, CHAIN_LABEL } from "@/lib/schema";
+import { DEMO_FIXTURES } from "@/lib/core/demo";
 import { PipelineProgress } from "./PipelineProgress";
 import { ScorePanel } from "./ScorePanel";
 import { FindingsList } from "./FindingsList";
@@ -26,6 +27,8 @@ export function InputForm() {
   );
   const [inputType, setInputType] = useState<InputType>("source");
   const [chain, setChain] = useState<ChainId>("ethereum");
+  const [source, setSource] = useState<string>("");
+  const [bytecode, setBytecode] = useState<string>("");
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -34,8 +37,17 @@ export function InputForm() {
     }
   }, [state.result, state.error]);
 
+  function loadDemo(id: "malicious" | "safe") {
+    const fixture = DEMO_FIXTURES.find((f) => f.id === id);
+    if (!fixture) return;
+    setInputType("source");
+    setSource(fixture.source);
+  }
+
   return (
     <div className="space-y-10">
+      <DemoButtons onPick={loadDemo} />
+
       <form action={formAction} className="space-y-5">
         <fieldset className="rounded-2xl border border-border bg-surface/40 p-1.5">
           <legend className="sr-only">Input type</legend>
@@ -127,6 +139,12 @@ export function InputForm() {
               id="scan-input"
               name={inputType === "source" ? "source" : "bytecode"}
               rows={inputType === "source" ? 14 : 6}
+              value={inputType === "source" ? source : bytecode}
+              onChange={(e) =>
+                inputType === "source"
+                  ? setSource(e.target.value)
+                  : setBytecode(e.target.value)
+              }
               placeholder={
                 inputType === "source"
                   ? "// Paste your Solidity source here"
@@ -213,6 +231,49 @@ function Spinner() {
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
       />
     </svg>
+  );
+}
+
+function DemoButtons({ onPick }: { onPick: (id: "malicious" | "safe") => void }) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface/30 p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-mono text-[11px] uppercase tracking-widest text-fg-subtle">
+          One-click fixtures
+        </h3>
+        <span className="font-mono text-[10px] text-fg-subtle">
+          reproducible demo · no env required
+        </span>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {DEMO_FIXTURES.map((fixture) => (
+          <button
+            key={fixture.id}
+            type="button"
+            onClick={() => onPick(fixture.id)}
+            className="group flex flex-col gap-1 rounded-xl border border-border bg-bg-elevated px-4 py-3 text-left transition-all hover:border-brand hover:bg-brand-soft/40"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-fg">{fixture.label}</span>
+              <span
+                className="font-mono text-[10px] uppercase tracking-widest"
+                style={{
+                  color:
+                    fixture.id === "malicious"
+                      ? "#fb7185"
+                      : "#5eead4",
+                }}
+              >
+                {fixture.hint}
+              </span>
+            </div>
+            <span className="text-xs leading-relaxed text-fg-muted">
+              {fixture.description}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
