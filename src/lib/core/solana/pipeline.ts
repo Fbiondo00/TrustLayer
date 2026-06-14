@@ -294,9 +294,14 @@ export class SolanaPipelineService {
     findings: Finding[];
     metrics: unknown;
   }> {
+    // Solana RPC caps getSignaturesForAddress at 1000 per call. We fetch the
+    // max so we either see the full history (rare for high-volume programs)
+    // OR know we're looking at a truncated window and shouldn't claim
+    // "recently created" based on a windowed sample.
+    const LIMIT = 1000;
     let sigs;
     try {
-      sigs = await this.rpc.getSignaturesForAddress(address, 200);
+      sigs = await this.rpc.getSignaturesForAddress(address, LIMIT);
     } catch {
       return {
         score: NEUTRAL_AI,
@@ -316,6 +321,10 @@ export class SolanaPipelineService {
     const total = sigs.length;
     const errors = sigs.filter((s) => s.err !== null).length;
     const errorRate = total > 0 ? errors / total : 0;
+    // True when we see the program's full history (RPC returned fewer than
+    // the limit). When this is false, daysActive is a windowed sample and
+    // tells us nothing about the program's real age.
+    const historyComplete = total < LIMIT;
 
     let firstTs = Number.MAX_SAFE_INTEGER;
     let lastTs = 0;
@@ -323,19 +332,22 @@ export class SolanaPipelineService {
       if (s.blockTime && s.blockTime < firstTs) firstTs = s.blockTime;
       if (s.blockTime && s.blockTime > lastTs) lastTs = s.blockTime;
     }
-    const daysActive = total > 0 ? Math.max(1, Math.ceil((lastTs - firstTs) / 86400)) : 0;
+    const observedDaysActive =
+      total > 0 ? Math.max(1, Math.ceil((lastTs - firstTs) / 86400)) : 0;
 
     const findings: Finding[] = [];
     let score = 100;
 
-    // recently_created — same logic as EVM fix (1000+ tx = established)
-    if (daysActive <= 7 && daysActive > 0 && total < 1000) {
+    // no_history = true recently_created. Only fires when we see the full
+    // history (historyComplete) AND the program is genuinely young. Token
+    // Program / Wormhole / Jupiter won't trip this — they return 1000 sigs.
+    if (historyComplete && observedDaysActive <= 7 && observedDaysActive > 0) {
       score -= 20;
       findings.push({
-        id: "sol-recently-created",
+        id: "sol-no-history",
         severity: "medium",
-        title: "Recently created",
-        description: `First observed tx ${daysActive} day(s) ago with ${total} total signatures — new program activity.`,
+        title: "Recently deployed — limited track record",
+        description: `First observed tx ${observedDaysActive} day(s) ago, ${total} total signatures, 0 truncated. Treat as unproven until activity accumulates.`,
         source: "system",
       });
     }
@@ -345,7 +357,7 @@ export class SolanaPipelineService {
         id: "sol-high-failure-rate",
         severity: "medium",
         title: "High transaction failure rate",
-        description: `${(errorRate * 100).toFixed(1)}% of recent signatures errored.`,
+        description: `${(errorRate * 100).toFixed(1)}% of recent ${total} signatures errored.`,
         source: "system",
       });
     }
@@ -359,14 +371,20 @@ export class SolanaPipelineService {
         source: "system",
       });
     }
-    // Established programs get a small bonus.
+    // Established programs get a small bonus. Cap at 90 days so a truncated
+    // 1000-sig window doesn't grant the bonus to a program we can't date.
+    if (historyComplete && observedDaysActive > 90) score += 5;
     if (total > 100 && errorRate < 0.05) score += 5;
-    if (daysActive > 90) score += 5;
 
     return {
       score: Math.max(0, Math.min(100, score)),
       findings,
-      metrics: { total, errorRate, daysActive },
+      metrics: {
+        total,
+        errorRate,
+        observedDaysActive,
+        historyComplete,
+      },
     };
   }
 
@@ -477,9 +495,15 @@ export class SolanaPipelineService {
       lines.push(`✅ No active SPL delegations — token balances cannot be drained by delegates.`);
     }
     if (txHistory) {
-      const m = txHistory.metrics as { total: number; errorRate: number; daysActive: number };
+      const m = txHistory.metrics as {
+        total: number;
+        errorRate: number;
+        observedDaysActive: number;
+        historyComplete: boolean;
+      };
+      const windowNote = m.historyComplete ? "" : " (windowed)";
       lines.push(
-        `📊 ${m.total} recent signatures over ${m.daysActive} day(s), ${(m.errorRate * 100).toFixed(1)}% error rate.`,
+        `📊 ${m.total} recent signatures over ${m.observedDaysActive} day(s)${windowNote}, ${(m.errorRate * 100).toFixed(1)}% error rate.`,
       );
     }
     if (verification && !verification.sourceVerified) {
